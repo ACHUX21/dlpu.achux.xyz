@@ -1,0 +1,39 @@
+{
+  "live": [
+    {
+      "slug": "math",
+      "nav": "Math",
+      "kicker": "Course",
+      "title": "Discrete Mathematics",
+      "summary": "Reviewed lessons, worked methods, practice questions, and interactive labs for the discrete mathematics course.",
+      "source": "courses/math/dist",
+      "theme": "studio",
+      "credit": {
+        "prefix": "Adapted from",
+        "href": "https://github.com/sprindi/discrete-math-studio",
+        "label": "sprindi/discrete-math-studio"
+      }
+    },
+    {
+      "slug": "timetable",
+      "nav": "Timetable",
+      "kicker": "Schedule",
+      "title": "Fall 2026 timetable",
+      "summary": "Week-by-week class grid for CST25: rooms, instructors, and the weeks each meeting runs.",
+      "source": "courses/timetable",
+      "credit": {
+        "prefix": "Timetable from",
+        "href": "https://github.com/THE12X/timetable2026",
+        "label": "THE12X/timetable2026"
+      }
+    }
+  ],
+  "upcoming": [
+    { "code": "DS", "title": "Data Structure" },
+    { "code": "LA", "title": "Linear Algebra" },
+    { "code": "CET", "title": "Circuit & Electronic Tech" },
+    { "code": "CC", "title": "Comprehensive Chinese III" },
+    { "code": "EC", "title": "English Composition" },
+    { "code": "OC", "title": "Overview of China" }
+  ]
+}

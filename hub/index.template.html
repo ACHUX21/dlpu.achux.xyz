@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Coursework hub for Achraf (ACHUX21), class CST25 at Dalian Polytechnic University.">
+  <meta name="theme-color" content="#f4f6f8">
+  <title>DLPU class hub · CST25</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shell.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function () {
+      var stored = null;
+      try { stored = localStorage.getItem("dlpu-hub-theme") || localStorage.getItem("theme"); } catch (e) {}
+      var dark = stored === "dark" || (stored !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+      var root = document.documentElement;
+      root.dataset.theme = dark ? "dark" : "light";
+      root.classList.toggle("dark", dark);
+      root.style.colorScheme = dark ? "dark" : "light";
+    })();
+  </script>
+</head>
+<body class="hub-home">
+  <a class="skip" href="#main">Skip to content</a>
+<!-- SHELL_HEADER -->
+  <main class="page" id="main">
+    <section class="hero">
+      <p class="eyebrow">Dalian Polytechnic University</p>
+      <h1>Class hub</h1>
+      <p class="lede">Fall 2026 coursework for Achraf (ACHUX21), class CST25.</p>
+    </section>
+
+    <section class="section" id="open" aria-labelledby="open-title">
+      <div class="section-head">
+        <h2 id="open-title">Open now</h2>
+        <p class="section-kicker">Ready to use</p>
+      </div>
+      <p class="section-note">Sections that are already published for this class.</p>
+      <div class="cards cards-live">
+<!-- LIVE_CARDS -->
+      </div>
+    </section>
+
+    <section class="section" id="upcoming" aria-labelledby="upcoming-title">
+      <div class="section-head">
+        <h2 id="upcoming-title">Upcoming classes</h2>
+        <p class="section-kicker">On the timetable</p>
+      </div>
+      <p class="section-note">These classes meet this term. Their notes and tools are not on the hub yet.</p>
+      <div class="cards cards-soon">
+<!-- SOON_CARDS -->
+      </div>
+    </section>
+  </main>
+<!-- SHELL_FOOTER -->
+  <script src="shell.js"></script>
+</body>
+</html>

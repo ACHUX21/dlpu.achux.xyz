@@ -7,6 +7,7 @@ import html
 import json
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -153,9 +154,18 @@ def inject_shell(page: str, live: list[dict], section: dict) -> str:
     return page
 
 
+def accent_class(section: dict) -> str:
+    accent = section.get("accent") or "hub"
+    if not re.fullmatch(r"[a-z0-9-]+", accent):
+        fail(f"Unsafe accent: {accent}")
+    return accent
+
+
 def live_card(section: dict) -> str:
     slug = section["slug"]
-    return f"""<a class="card card-live" href="{html.escape(slug, quote=True)}/">
+    glyph = section.get("glyph") or "·"
+    return f"""<a class="card card-live accent-{accent_class(section)}" href="{html.escape(slug, quote=True)}/">
+        <span class="glyph" aria-hidden="true">{html.escape(glyph)}</span>
         <p class="kicker">{html.escape(section["kicker"])}</p>
         <h3>{html.escape(section["title"])}</h3>
         <p class="summary">{html.escape(section["summary"])}</p>
@@ -164,11 +174,56 @@ def live_card(section: dict) -> str:
 
 
 def soon_card(section: dict) -> str:
-    return f"""<article class="card card-soon">
+    glyph = section.get("glyph") or section.get("code") or "·"
+    return f"""<article class="card card-soon accent-{accent_class(section)}">
+        <span class="glyph" aria-hidden="true">{html.escape(glyph)}</span>
         <p class="kicker">{html.escape(section["code"])}</p>
         <h3>{html.escape(section["title"])}</h3>
         <p class="badge"><span class="dot" aria-hidden="true"></span>Coming soon</p>
       </article>"""
+
+
+def build_schedule_js() -> str:
+    """Read the timetable's own data and emit the week the page opens on."""
+    text = (ROOT / "courses/timetable/index.html").read_text(encoding="utf-8")
+    start = text.find("const MIN_WEEK")
+    end = text.find("function isWeekActive")
+    if start < 0 or end < 0:
+        fail("Could not find the timetable schedule in courses/timetable/index.html")
+    program = text[start:end] + r"""
+const days = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
+const accent = {
+  "bg-DataStructure":"ds","bg-DiscreteMath":"dm","bg-LinearAlgebra":"la",
+  "bg-Chinese":"cc","bg-English":"ec","bg-Circuit":"cet","bg-China":"oc"
+};
+const meetings = [];
+schedule.forEach((day, di) => {
+  timeSlots.forEach(slot => {
+    (day[slot.id] || []).forEach(item => {
+      const course = courses[item.id];
+      meetings.push({
+        day: di,
+        start: slot.start,
+        end: slot.end,
+        time: slot.raw,
+        id: item.id,
+        name: item.title || course.name,
+        room: item.room || course.room || "",
+        weeks: item.weeks,
+        accent: accent[course.color] || "hub"
+      });
+    });
+  });
+});
+process.stdout.write(JSON.stringify({previewWeek: currentWeek, days, meetings}));
+"""
+    result = subprocess.run(["node", "-e", program], check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        fail("Could not read the timetable schedule:\n" + result.stderr)
+    payload = json.loads(result.stdout)
+    if payload.get("previewWeek") != 11 or len(payload.get("meetings") or []) < 10:
+        fail("Timetable schedule did not parse into the expected week")
+    return "window.DLPU_WEEK = " + json.dumps(payload, ensure_ascii=False) + ";\n"
 
 
 def require(section: dict, key: str, where: str) -> str:
@@ -207,8 +262,9 @@ def main() -> None:
         shutil.rmtree(SITE)
     SITE.mkdir()
 
-    for name in ("styles.css", "shell.css", "shell.js", "favicon.svg"):
+    for name in ("styles.css", "shell.css", "shell.js", "next.js", "favicon.svg"):
         shutil.copy2(HUB / name, SITE / name)
+    (SITE / "schedule.js").write_text(build_schedule_js(), encoding="utf-8")
 
     for section in live:
         copy_site(ROOT / section["source"], SITE / section["slug"])

@@ -29,7 +29,7 @@ courses/
 .github/workflows/pages.yml   deploy _site/ to GitHub Pages
 ```
 
-`scripts/assemble.py` reads `hub/sections.json`, writes the landing page, and copies each live section into `_site/<slug>/`. It wraps every section in the same header and footer (`hub/shell.css`). It also copies `CNAME` and `.nojekyll` into that folder. `_site/` is gitignored; GitHub Actions builds it on every push to `main`.
+`scripts/assemble.py` reads `hub/sections.json`, writes the landing page, and copies each live section into `_site/<slug>/`. It wraps every section in the same header and footer (`hub/shell.css`). It also reads the timetable’s week data into `schedule.js` for the “On the timetable” panel. That panel uses week 11, the week the timetable opens on, because the schedule stores term weeks rather than calendar dates. The script copies `CNAME` and `.nojekyll` into `_site/`. `_site/` is gitignored; GitHub Actions builds it on every push to `main`.
 
 Course files are copies, not git submodules.
 

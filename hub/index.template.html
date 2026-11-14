@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Coursework hub for Achraf (ACHUX21), class CST25 at Dalian Polytechnic University.">
-  <meta name="theme-color" content="#f4f6f8">
+  <meta name="theme-color" content="#f6f3eb">
   <title>DLPU class hub · CST25</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,9 +29,29 @@
 <!-- SHELL_HEADER -->
   <main class="page" id="main">
     <section class="hero">
-      <p class="eyebrow">Dalian Polytechnic University</p>
-      <h1>Class hub</h1>
-      <p class="lede">Fall 2026 coursework for Achraf (ACHUX21), class CST25.</p>
+      <div class="hero-copy">
+        <svg class="hero-art" viewBox="0 0 220 160" aria-hidden="true">
+          <path d="M36 112 L78 48 L142 42 L186 96 L118 132 Z" fill="none" stroke="#31574c" stroke-width="1.6" opacity=".55"/>
+          <path d="M36 112 L142 42 M78 48 L186 96 M78 48 L118 132" fill="none" stroke="#b8883b" stroke-width="1" opacity=".7"/>
+          <g fill="#fffef8" stroke="#31574c" stroke-width="1.6" font-family="Georgia, serif" font-size="13" text-anchor="middle">
+            <circle cx="36" cy="112" r="14"/><text x="36" y="117" stroke="none" fill="#31574c">∀</text>
+            <circle cx="78" cy="48" r="14"/><text x="78" y="53" stroke="none" fill="#31574c">p</text>
+            <circle cx="142" cy="42" r="14"/><text x="142" y="47" stroke="none" fill="#31574c">∩</text>
+            <circle cx="186" cy="96" r="14"/><text x="186" y="101" stroke="none" fill="#31574c">R</text>
+            <circle cx="118" cy="132" r="14"/><text x="118" y="137" stroke="none" fill="#31574c">⊕</text>
+          </g>
+        </svg>
+        <p class="eyebrow">Dalian Polytechnic University</p>
+        <h1>Class hub</h1>
+        <p class="lede">Notes, practice, and the week ahead for class CST25.</p>
+        <p class="hero-meta">Fall 2026 · Achraf (ACHUX21)</p>
+      </div>
+      <aside class="next-panel" id="next-class" aria-labelledby="next-class-label">
+        <p class="eyebrow" id="next-class-label">On the timetable</p>
+        <p class="next-title">This week</p>
+        <p class="next-note">Open the timetable for the week-by-week grid.</p>
+        <a class="next-link" href="timetable/">Open the full week</a>
+      </aside>
     </section>
 
     <section class="section" id="open" aria-labelledby="open-title">
@@ -57,6 +77,8 @@
     </section>
   </main>
 <!-- SHELL_FOOTER -->
+  <script src="schedule.js"></script>
+  <script src="next.js"></script>
   <script src="shell.js"></script>
 </body>
 </html>

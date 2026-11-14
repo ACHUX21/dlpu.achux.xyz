@@ -1,44 +1,48 @@
 :root {
   color-scheme: light;
-  --bg: #f4f6f8;
-  --surface: #ffffff;
-  --ink: #1a2332;
-  --muted: #5c6b7c;
-  --line: #e3e8ee;
-  --accent: #1d6a86;
-  --accent-ink: #14556c;
-  --soft: #e7f3f7;
-  --shadow: 0 1px 2px rgba(22, 34, 51, 0.05), 0 10px 28px rgba(22, 34, 51, 0.06);
+  --bg: #f6f3eb;
+  --surface: #fffef8;
+  --ink: #203a35;
+  --muted: #5e726b;
+  --line: #e0d9cc;
+  --accent: #31574c;
+  --accent-ink: #1e463d;
+  --soft: #e7efe8;
+  --gold: #b8883b;
+  --shadow: 0 1px 2px rgba(32, 58, 53, 0.05), 0 12px 28px rgba(32, 58, 53, 0.06);
   --font: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: Georgia, "Iowan Old Style", Palatino, "Palatino Linotype", serif;
   --hub-bar: 64px;
-  --radius: 16px;
+  --radius: 18px;
 }
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #10161d;
-  --surface: #1a222c;
-  --ink: #e8eef4;
-  --muted: #a7b4c2;
-  --line: #2c3846;
-  --accent: #8ecbdc;
-  --accent-ink: #c5e7f1;
-  --soft: #1d3340;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.28);
+  --bg: #141c19;
+  --surface: #1c2823;
+  --ink: #f3eee4;
+  --muted: #b7c4bc;
+  --line: #314038;
+  --accent: #9dccb6;
+  --accent-ink: #d7efe4;
+  --soft: #24352e;
+  --gold: #e0b56a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 14px 30px rgba(0, 0, 0, 0.28);
 }
 
 @media (prefers-color-scheme: dark) {
   html:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #10161d;
-    --surface: #1a222c;
-    --ink: #e8eef4;
-    --muted: #a7b4c2;
-    --line: #2c3846;
-    --accent: #8ecbdc;
-    --accent-ink: #c5e7f1;
-    --soft: #1d3340;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.28);
+    --bg: #141c19;
+    --surface: #1c2823;
+    --ink: #f3eee4;
+    --muted: #b7c4bc;
+    --line: #314038;
+    --accent: #9dccb6;
+    --accent-ink: #d7efe4;
+    --soft: #24352e;
+    --gold: #e0b56a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 14px 30px rgba(0, 0, 0, 0.28);
   }
 }
 
@@ -90,14 +94,14 @@ html[data-theme="dark"] {
   display: grid;
   place-items: center;
   border-radius: 11px;
-  background: #1d6a86;
-  color: #f4fbfd;
+  background: #31574c;
+  color: #f6f3eb;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
-html[data-theme="dark"] .hub-mark { background: #1a7f9a; color: #f4fbfd; }
+html[data-theme="dark"] .hub-mark { background: #3f6d5e; color: #f6f3eb; }
 
 .hub-brand-text {
   display: flex;
@@ -106,8 +110,9 @@ html[data-theme="dark"] .hub-mark { background: #1a7f9a; color: #f4fbfd; }
 }
 
 .hub-name {
-  font-weight: 600;
-  font-size: 0.98rem;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.05rem;
   letter-spacing: -0.02em;
 }
 

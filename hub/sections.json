@@ -6,6 +6,8 @@
       "kicker": "Course",
       "title": "Discrete Mathematics",
       "summary": "Reviewed lessons, worked methods, practice questions, and interactive labs for the discrete mathematics course.",
+      "glyph": "∴",
+      "accent": "dm",
       "source": "courses/math/dist",
       "theme": "studio",
       "credit": {
@@ -20,6 +22,8 @@
       "kicker": "Schedule",
       "title": "Fall 2026 timetable",
       "summary": "Week-by-week class grid for CST25: rooms, instructors, and the weeks each meeting runs.",
+      "glyph": "▤",
+      "accent": "hub",
       "source": "courses/timetable",
       "credit": {
         "prefix": "Timetable from",
@@ -29,11 +33,11 @@
     }
   ],
   "upcoming": [
-    { "code": "DS", "title": "Data Structure" },
-    { "code": "LA", "title": "Linear Algebra" },
-    { "code": "CET", "title": "Circuit & Electronic Tech" },
-    { "code": "CC", "title": "Comprehensive Chinese III" },
-    { "code": "EC", "title": "English Composition" },
-    { "code": "OC", "title": "Overview of China" }
+    { "code": "DS", "title": "Data Structure", "glyph": "{}", "accent": "ds" },
+    { "code": "LA", "title": "Linear Algebra", "glyph": "λ", "accent": "la" },
+    { "code": "CET", "title": "Circuit & Electronic Tech", "glyph": "⚡", "accent": "cet" },
+    { "code": "CC", "title": "Comprehensive Chinese III", "glyph": "文", "accent": "cc" },
+    { "code": "EC", "title": "English Composition", "glyph": "Ab", "accent": "ec" },
+    { "code": "OC", "title": "Overview of China", "glyph": "中", "accent": "oc" }
   ]
 }

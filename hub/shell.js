@@ -30,7 +30,7 @@
       localStorage.setItem("study-site-theme", dark ? "dark" : "light");
     } catch (e) {}
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", dark ? "#10161d" : "#f4f6f8");
+    if (meta) meta.setAttribute("content", dark ? "#141c19" : "#f6f3eb");
     paintButton(dark);
   }
 

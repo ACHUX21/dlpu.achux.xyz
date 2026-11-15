@@ -287,7 +287,7 @@ def main() -> None:
     courses = {section["slug"]: build_course_data(section) for section in live if section["slug"] in {"math", "circuits"}}
     (SITE / "course.js").write_text("window.DLPU_COURSES = " + json.dumps(courses, ensure_ascii=False) + ";\n", encoding="utf-8")
 
-    for name in ("learning.js", "styles.css", "shell.css", "shell.js", "next.js", "favicon.svg"):
+    for name in ("learning.js", "styles.css", "shell.css", "shell.js", "next.js", "term-week.js", "favicon.svg"):
         shutil.copy2(HUB / name, SITE / name)
     (SITE / "schedule.js").write_text(build_schedule_js(), encoding="utf-8")
 

@@ -680,3 +680,28 @@
   .type-legend > strong { width: 100%; }
   .meeting-type { font-size: 9px; }
 }
+
+/* Current-week detection */
+.week-controls button.this-week {
+  width: auto;
+  padding: 0 12px;
+  font: 600 10px var(--mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  border-color: #3b6b78;
+}
+.week-controls button.this-week:disabled {
+  color: var(--muted);
+  border-color: #35455a;
+  cursor: default;
+}
+#week-status {
+  color: var(--cyan);
+  font: 600 11px var(--mono);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+@media (max-width: 700px) {
+  .week-controls button.this-week { width: auto; padding: 0 9px; font-size: 9px; }
+}

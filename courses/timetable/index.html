@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090d16" />
+    <meta
+      name="description"
+      content="CST25 mission schedule. Fall 2026 courses, rooms, instructors, and term weeks at DLPU."
+    />
+    <title>Mission Schedule // CST25 · Fall 2026</title>
+    <link rel="icon" href="icon.ico" />
+    <link rel="stylesheet" href="timetable.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <main class="tt-shell" id="main">
+      <div class="tt-transmission">
+        <span><i class="signal-dot"></i> CST25 / OPERATIONS DIVISION</span
+        ><span id="shanghai-clock">ASIA / SHANGHAI</span>
+      </div>
+      <div class="tt-intro">
+        <div>
+          <p class="tt-eyebrow">EPISODE 02 / 時間割</p>
+          <h1>MISSION <span>SCHEDULE.</span></h1>
+          <p class="tt-description">
+            The week ahead. Every class, every coordinate.
+          </p>
+        </div>
+        <div class="term-stamp">
+          FALL<span>2026</span><small>DALIAN POLYTECHNIC UNIVERSITY</small>
+        </div>
+      </div>
+      <div class="schedule-toolbar">
+        <div class="week-controls">
+          <button id="prev-week" type="button" aria-label="Previous week">
+            ←</button
+          ><label for="weekSelector">TERM WEEK</label
+          ><select id="weekSelector" aria-label="Term week"></select
+          ><button id="next-week" type="button" aria-label="Next week">
+            →
+          </button>
+        </div>
+        <div class="week-summary">
+          <span id="meeting-count"></span><span class="toolbar-divider">/</span
+          ><span>CLICK A CLASS FOR BRIEFING</span>
+        </div>
+      </div>
+      <p class="schedule-note">
+        Term weeks 11–19 · Dates were not supplied with the source schedule.
+        Today’s highlight and clock follow Shanghai time.
+      </p>
+      <nav class="day-tabs" aria-label="Choose a weekday"></nav>
+      <div
+        class="table-wrapper"
+        tabindex="0"
+        aria-label="Weekly class schedule"
+      >
+        <div id="timetable" role="table" aria-label="CST25 weekly timetable">
+          <div class="tt-row" role="row" id="day-headings"></div>
+          <div id="timetableBody" role="rowgroup"></div>
+        </div>
+      </div>
+      <div class="schedule-bottom">
+        <p>
+          <span class="today-key"></span> TODAY
+          <span class="now-key"></span> SHANGHAI CLOCK
+          <span class="free-key">╱</span> FREE PERIOD
+        </p>
+        <span>← → CHANGE WEEK</span>
+      </div>
+      <section class="course-index" aria-labelledby="course-index-title">
+        <div class="index-heading">
+          <h2 id="course-index-title">THE COURSE ROSTER</h2>
+          <span>07 SUBJECTS / 科目</span>
+        </div>
+        <div id="course-roster"></div>
+      </section>
+    </main>
+    <dialog id="courseModal" aria-labelledby="modalTitle">
+      <button class="modal-close" aria-label="Close course briefing">×</button>
+      <p class="tt-eyebrow">MISSION BRIEFING / 授業</p>
+      <h2 id="modalTitle"></h2>
+      <dl>
+        <div>
+          <dt>INSTRUCTOR</dt>
+          <dd id="modalInstructor"></dd>
+        </div>
+        <div>
+          <dt>ROOM</dt>
+          <dd id="modalRoom"></dd>
+        </div>
+        <div>
+          <dt>TIME</dt>
+          <dd id="modalTime"></dd>
+        </div>
+        <div>
+          <dt>ACTIVE WEEKS</dt>
+          <dd id="modalWeeks"></dd>
+        </div>
+      </dl>
+      <a id="math-link" href="../math/" hidden>Enter the math studio ↗</a
+      ><button class="briefing-done" type="button">Briefing complete →</button>
+    </dialog>
+    <script>
+      const MIN_WEEK = 11;
+      const MAX_WEEKS = 19;
+      let currentWeek = 11;
+
+      const courses = {
+        DS: {
+          name: "Data Structure",
+          instructor: "Ms. Fang Yuan",
+          room: "201",
+          color: "bg-DataStructure",
+          modalGrad: "from-blue-600 to-indigo-600",
+        },
+        DM: {
+          name: "Discrete Mathematics",
+          instructor: "Ms. Shao Huiyan",
+          room: "101",
+          color: "bg-DiscreteMath",
+          modalGrad: "from-sky-600 to-blue-600",
+        },
+        LA: {
+          name: "Linear Algebra",
+          instructor: "Ms. Liu Yan",
+          room: "101",
+          color: "bg-LinearAlgebra",
+          modalGrad: "from-indigo-600 to-violet-600",
+        },
+        CC: {
+          name: "Comprehensive Chinese III",
+          instructor: "Ms. Yang Yanqing",
+          color: "bg-Chinese",
+          modalGrad: "from-rose-600 to-pink-600",
+        },
+        EC: {
+          name: "English Composition",
+          instructor: "Ms. Wu Jie",
+          color: "bg-English",
+          modalGrad: "from-teal-600 to-emerald-600",
+        },
+        CET: {
+          name: "Circuit & Electronic Tech",
+          instructor: "Ms. Chu Ran",
+          color: "bg-Circuit",
+          modalGrad: "from-amber-600 to-orange-600",
+        },
+        OC: {
+          name: "Overview of China",
+          instructor: "Ms. Yu Yan",
+          room: "101",
+          color: "bg-China",
+          modalGrad: "from-pink-600 to-rose-600",
+        },
+      };
+
+      const timeSlots = [
+        { id: "T1", start: "08:00", end: "09:40", raw: "08:00 - 09:40" },
+        { id: "T2", start: "10:05", end: "11:45", raw: "10:05 - 11:45" },
+        { id: "T3", start: "13:20", end: "14:55", raw: "13:20 - 14:55" },
+        { id: "T4", start: "15:15", end: "16:50", raw: "15:15 - 16:50" },
+      ];
+
+      const schedule = [
+        // Monday (0)
+        {
+          T1: [],
+          T2: [
+            { id: "DM", weeks: "1-4,7-14", room: "101" },
+            {
+              id: "CET",
+              weeks: "15",
+              room: "506",
+              title: "Circuit Exp 2 (Ex 2)",
+            },
+            {
+              id: "CET",
+              weeks: "16",
+              room: "506",
+              title: "Circuit Exp 4 (Ex 4)",
+            },
+          ],
+          T3: [
+            { id: "DS", weeks: "1-4,7-16", room: "201" },
+            {
+              id: "DS",
+              weeks: "17",
+              room: "201",
+              title: "Data Structure Project Week",
+            },
+          ],
+          T4: [
+            { id: "DS", weeks: "1-4,7-16", room: "201" },
+            {
+              id: "DS",
+              weeks: "17",
+              room: "201",
+              title: "Data Structure Project Week",
+            },
+          ],
+        },
+        // Tuesday (1)
+        {
+          T1: [{ id: "CC", weeks: "1-4,7-18", room: "101" }],
+          T2: [{ id: "CET", weeks: "1-3", room: "101" }],
+          T3: [{ id: "EC", weeks: "1-4", room: "101" }],
+          T4: [],
+        },
+        // Wednesday (2)
+        {
+          T1: [{ id: "DM", weeks: "1-4,7-14", room: "101" }],
+          T2: [
+            { id: "EC", weeks: "1-4", room: "201" },
+            { id: "CET", weeks: "11-13", room: "201" },
+          ],
+          T3: [{ id: "OC", weeks: "8-19", room: "101" }],
+          T4: [{ id: "OC", weeks: "8-19", room: "101" }],
+        },
+        // Thursday (3)
+        {
+          T1: [{ id: "LA", weeks: "3-4", room: "101" }],
+          T2: [{ id: "LA", weeks: "3-4", room: "101" }],
+          T3: [
+            { id: "LA", weeks: "7-11", room: "101" },
+            {
+              id: "CET",
+              weeks: "14",
+              room: "506",
+              title: "Circuit Exp 1 (Ex 1)",
+            },
+            {
+              id: "CET",
+              weeks: "15",
+              room: "506",
+              title: "Circuit Exp 3 (Ex 3)",
+            },
+          ],
+          T4: [
+            { id: "CET", weeks: "2-4,6-8", room: "101" },
+            { id: "LA", weeks: "9-12", room: "101" },
+          ],
+        },
+        // Friday (4)
+        {
+          T1: [{ id: "EC", weeks: "7-10", room: "201" }],
+          T2: [{ id: "CC", weeks: "1-3,6-18", room: "201" }],
+          T3: [
+            {
+              id: "CC",
+              weeks: "11,14",
+              room: "201",
+              title: "Comprehensive Chinese III (Extra)",
+            },
+          ],
+          T4: [],
+        },
+      ];
+
+      function isWeekActive(rule, week) {
+        return rule.split(",").some((part) => {
+          const [a, b] = part.split("-").map(Number);
+          return week >= a && week <= (b || a);
+        });
+      }
+    </script>
+    <script src="timetable.js"></script>
+  </body>
+</html>

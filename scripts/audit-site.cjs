@@ -15,6 +15,8 @@ const base = option('base', 'http://127.0.0.1:8765');
 const out = option('out', '/workspace/codex/shots2');
 const shotsOnly = args.includes('--screenshots');
 const failures = [], errors = [], checks = [];
+// A crashed renderer must never leave the command running indefinitely.
+setTimeout(()=>{console.error('Site audit exceeded 180 seconds');process.exit(1)},180000).unref();
 
 // Runs in Chrome, including text below the fold but excluding clipped/offcanvas,
 // hidden and occluded-by-modal content. Range rectangles track wrapped text.
@@ -65,7 +67,7 @@ async function scan(page, label) {
   });
   const hide = await page.addStyleTag({content: '* { -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; } .lesson-figure svg text, .lesson-figure svg tspan, .hero-art svg text, .graph-drawing text, .lab-svg text, svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }'});
   let png;
-  try { png = await page.screenshot({fullPage:true, animations:'disabled'}); }
+  try { png = await page.screenshot({fullPage:true, animations:'disabled',timeout:5000}); }
   finally { await hide.evaluate(el=>el.remove()); }
   const result = await page.evaluate(async ({text, image}) => {
     const img = new Image(); img.src = image; await img.decode();
@@ -109,12 +111,13 @@ async function scan(page, label) {
       const context=await browser.newContext({viewport,deviceScaleFactor:1,reducedMotion:'reduce'});
       await context.addInitScript(()=>sessionStorage.setItem('dlpu-broadcast-boot','1'));
       const page=await context.newPage();
+      page.setDefaultTimeout(6000);page.setDefaultNavigationTimeout(12000);
       page.on('pageerror',e=>errors.push(`${page.url()}: ${e.message}`));
       page.on('console',msg=>{if(msg.type()==='error')errors.push(`${page.url()}: ${msg.text()}`)});
-      const go=async(url)=>{await page.goto(base+url,{waitUntil:'networkidle'});await page.evaluate(()=>document.fonts.ready);};
-      const capture=async(label)=>scan(page,`${viewport.width} ${label}`);
+      const go=async(url)=>{await page.goto(base+url,{waitUntil:'networkidle'});await page.evaluate(async()=>{await document.fonts.ready;window.scrollTo({top:0,left:0,behavior:'instant'});await new Promise(requestAnimationFrame)});};
+      const capture=async(label)=>{let timer;try{await Promise.race([scan(page,`${viewport.width} ${label}`),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Page audit exceeded 12 seconds: '+label)),12000)})])}finally{clearTimeout(timer)}};
       const targets=[['hub','/'],['math','/math/'],['translate','/math/#method/translate'],['lesson','/math/#topic/1.1'],['timetable','/timetable/']];
-      for(const [name,url] of targets){await go(url);await page.screenshot({path:path.join(out,`${name}-${viewport.width}x${viewport.height}.png`),fullPage:true});if(!shotsOnly)await capture(url);}
+      for(const [name,url] of targets){await go(url);await page.screenshot({path:path.join(out,`${name}-${viewport.width}x${viewport.height}.png`),timeout:5000});await page.screenshot({path:path.join(out,`${name}-${viewport.width}x${viewport.height}-full.png`),fullPage:true,timeout:5000});if(!shotsOnly)await capture(url);}
       if(shotsOnly){await context.close();continue;}
       await go('/math/');
       const routes=await page.evaluate(()=>[...new Set(['desk','main','topic','methods','method','practice','lab','exam','sources',...TOPICS.flatMap(t=>['topic/'+t.id,'practice/'+t.id]),...CHAPTERS.map(c=>'practice/c'+c.id),...METHODS.map(m=>'method/'+m.id)])]);
@@ -151,7 +154,7 @@ async function scan(page, label) {
     }
   } catch(e) { errors.push(e.stack || String(e)); } finally {await browser.close()}
   const unique=[...new Map(failures.map(f=>[`${f.selector}|${f.text}|${f.color}|${f.background}|${f.ratio}`,f])).values()];
-  await fs.writeFile(path.join(out,'contrast-report.json'),JSON.stringify({checks,failures,errors},null,2));
+  await fs.writeFile(path.join(out,shotsOnly?'screenshots-report.json':'contrast-report.json'),JSON.stringify({checks,failures,errors},null,2));
   console.log(`${checks.length} states; ${checks.reduce((n,c)=>n+c.count,0)} text checks; ${failures.length} contrast failures (${unique.length} unique); ${errors.length} errors.`);
   console.log(JSON.stringify({failures:unique,errors},null,2));
   if(failures.length||errors.length)process.exitCode=1;

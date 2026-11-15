@@ -87,18 +87,33 @@ Then open:
 - http://127.0.0.1:8080/math/
 - http://127.0.0.1:8080/timetable/
 
+## Learning and accessibility
+
+Math lesson objectives come from the existing headings and definitions. Suggested preparation follows the published course order; difficulty is explicitly an estimate. Worked examples keep the reviewed source wording, with numbered solution steps and distinct Key idea, Common mistake, and Try it callouts. Inline quizzes use the existing question bank and save attempts in the original storage format. Definition tooltips work on hover and keyboard focus. Reading text is limited to about 70 characters per line.
+
+Completion marks, chapter rings, the course bar, and hub resume links share `discrete-studio-v1`. Completion measures reading, not mastery. Timetable meeting types come from the existing experiment, project, and extra-class titles; other meetings are labelled Class.
+
 ## Verification
 
-Build and serve the site with the local preview commands above. Browser verification for this redesign covered all three entry points at 1440×900 and 390×844, plus overflow checks at 320, 768, and 1024px. Screenshots and the browser QA report are saved outside the repository at `/workspace/codex/shots/`. For example:
+The browser checks use system Chrome at `/usr/bin/google-chrome`. Install the development dependency once, build, and serve:
 
 ```sh
-google-chrome --headless=new --no-sandbox --hide-scrollbars \
-  --window-size=1440,900 --virtual-time-budget=6000 \
-  --screenshot=/workspace/codex/shots/hub-desktop.png \
-  http://127.0.0.1:8080/
+npm ci
+python3 scripts/assemble.py
+python3 -m http.server 8765 --directory _site
 ```
 
-Repeat for `/math/`, `/timetable/`, and `--window-size=390,844`. Check the math lesson, practice, tools, search, progress persistence, and the timetable’s week controls and course briefings in addition to the landing screens.
+In another terminal:
+
+```sh
+npm run audit -- --out=/workspace/codex/shots2
+# Or capture only the desktop/mobile screenshots:
+npm run screenshots -- --out=/workspace/codex/shots2
+```
+
+Pass `--base=http://127.0.0.1:8080` for another preview port. The audit covers every math hash route, the hub, timetable weeks and mobile weekdays, labs, quiz feedback, search, and dialogs at 1440×900 and 390×844. It compares computed foreground/opacity with the painted background after temporarily hiding text, including SVG diagrams, gradients, disabled labels, and placeholders. All text must reach 4.5:1 regardless of size. It also checks page overflow and console errors. Navigation, screenshots, individual audits, and the whole command have time limits so a broken page cannot hang the run.
+
+`contrast-report.json` records the results. Viewport PNGs and additional `-full.png` captures are saved in the chosen output directory, outside git. Inspect these visually as well as reading the report. Screenshots-only runs use a separate report and never overwrite contrast evidence. Progress, notes, inline quiz feedback/retry, and hub resume persistence have also been checked in Chrome.
 
 ## Add a section
 

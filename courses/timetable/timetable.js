@@ -58,6 +58,14 @@
     if (currentWeek + delta >= MIN_WEEK && currentWeek + delta <= MAX_WEEKS)
       renderWeek(currentWeek + delta);
   }
+  // Only experiment, project and extra titles have a more specific source type.
+  function meetingType(entry) {
+    const title=entry.title || '';
+    if(/project/i.test(title))return ['Project','project'];
+    if(/\bexp\b|experiment/i.test(title))return ['Lab','lab'];
+    if(/extra/i.test(title))return ['Extra','extra'];
+    return ['Class',''];
+  }
   function renderWeek(week) {
     currentWeek = week;
     try {
@@ -116,8 +124,12 @@
           b.style.setProperty("--course-color", palette[entry.id]);
           b.setAttribute(
             "aria-label",
-            `${title}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
+            `${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
           );
+          const [type,typeClass]=meetingType(entry);
+          const typeBadge=document.createElement('span');
+          typeBadge.className='meeting-type '+typeClass;
+          typeBadge.textContent=type;
           const code = document.createElement("span");
           code.className = "course-code";
           code.textContent = `${entry.id} / 0${si + 1}`;
@@ -129,7 +141,8 @@
           const foot = document.createElement("span");
           foot.className = "course-foot";
           foot.innerHTML = `<span>ROOM ${room}</span><span aria-hidden="true">↗</span>`;
-          b.append(code, name, teacher, foot);
+          const cardHead=document.createElement('span');cardHead.className='course-card-head';cardHead.append(code,typeBadge);
+          b.append(cardHead, name, teacher, foot);
           b.onclick = () => openModal(entry, info, room, slot, title);
           cell.append(b);
         } else {
@@ -189,6 +202,7 @@
   }
   function openModal(entry, info, room, slot, title) {
     $("modalTitle").textContent = title;
+    $("modalType").textContent = meetingType(entry)[0];
     $("modalInstructor").textContent = info.instructor;
     $("modalRoom").textContent = `Room ${room}`;
     $("modalTime").textContent = slot.raw;

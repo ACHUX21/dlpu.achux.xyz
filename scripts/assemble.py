@@ -142,18 +142,22 @@ def accent_class(section: dict) -> str:
     return accent
 
 
-def live_card(section: dict) -> str:
+def live_card(section: dict, course: dict) -> str:
     slug = section["slug"]
     glyph = section.get("glyph") or "·"
     episode = "01" if slug == "math" else "02"
-    stats = '<span>06 CHAPTERS</span><span>25 LESSONS</span><span>INTERACTIVE LABS</span>' if slug == "math" else '<span>WEEKS 11—19</span><span>05 DAYS</span><span>LIVE SCHEDULE</span>'
+    stats = f'<span>{len(course["chapters"]):02d} CHAPTERS</span><span>{len(course["topics"])} LESSONS</span><span>INTERACTIVE LABS</span>' if slug == "math" else '<span>WEEKS 11—19</span><span>05 DAYS</span><span>LIVE SCHEDULE</span>'
+    learning = ('<div class="course-outcomes"><span class="outcomes-label">WHAT YOU WILL LEARN</span><ul>'
+                + ''.join(f'<li>{html.escape(c["title"])}</li>' for c in course["chapters"])
+                + '</ul></div><div class="hub-course-progress" data-course-progress><div><span>YOUR PROGRESS</span><span data-course-count>0 / ' + str(len(course["topics"])) + ' lessons</span></div><div class="hub-course-meter" role="progressbar" aria-label="Discrete Mathematics completion" aria-valuemin="0" aria-valuemax="' + str(len(course["topics"])) + '" aria-valuenow="0"><span></span></div><small data-course-resume>Start with ' + html.escape(course["topics"][0]["title"]) + '</small></div>') if slug == "math" else '<div class="course-outcomes"><span class="outcomes-label">PLAN YOUR LEARNING WEEK</span><ul><li>Rooms &amp; instructors</li><li>Active term weeks</li><li>Class, lab &amp; project meetings</li></ul></div><div class="schedule-card-note">Your timetable, one week at a time.<br>Choose a class to see its briefing.</div>'
     return f"""<a class="card card-live accent-{accent_class(section)}" href="{html.escape(slug, quote=True)}/">
         <div class="card-top"><span class="kicker">EPISODE {episode} / {html.escape(section["kicker"])}</span><span class="card-status">● ON AIR</span></div>
         <div class="card-visual" aria-hidden="true"><span class="card-symbol">{html.escape(glyph)}</span><span class="visual-label">{"論理と構造" if slug == "math" else "時間割"}</span><span class="visual-index">{episode}</span></div>
         <h3>{html.escape(section["title"])}</h3>
         <p class="summary">{html.escape(section["summary"])}</p>
         <div class="card-stats">{stats}</div>
-        <p class="card-meta"><span class="path">/{html.escape(slug)}/</span><span class="go">Enter episode <span aria-hidden="true">↗</span></span></p>
+        {learning}
+        <p class="card-meta"><span class="path">/{html.escape(slug)}/</span><span class="go">{"Continue course" if slug == "math" else "Open timetable"} <span aria-hidden="true">↗</span></span></p>
       </a>"""
 
 
@@ -165,6 +169,18 @@ def soon_card(section: dict) -> str:
         <h3>{html.escape(section["title"])}</h3>
         <p class="badge">NEXT EPISODE <span aria-hidden="true">↗</span></p>
       </article>"""
+
+
+def build_course_data() -> dict:
+    """Read the reviewed course index; keep the hub counts and resume links in sync."""
+    program = r'''const fs=require("fs"),vm=require("vm"),context={window:{}};
+vm.runInNewContext(fs.readFileSync(process.argv[1],"utf8"),context);
+process.stdout.write(JSON.stringify({
+  topics:context.window.TOPICS.map(({id,title,chapter})=>({id,title,chapter})),
+  chapters:context.window.CHAPTERS.map(({id,title})=>({id,title}))
+}));'''
+    result = subprocess.run(["node", "-e", program, str(ROOT / "courses/math/dist/content.js")], check=True, capture_output=True, text=True)
+    return json.loads(result.stdout)
 
 
 def build_schedule_js() -> str:
@@ -246,7 +262,10 @@ def main() -> None:
         shutil.rmtree(SITE)
     SITE.mkdir()
 
-    for name in ("styles.css", "shell.css", "shell.js", "next.js", "favicon.svg"):
+    course = build_course_data()
+    (SITE / "course.js").write_text("window.DLPU_COURSE = " + json.dumps(course, ensure_ascii=False) + ";\n", encoding="utf-8")
+
+    for name in ("learning.js", "styles.css", "shell.css", "shell.js", "next.js", "favicon.svg"):
         shutil.copy2(HUB / name, SITE / name)
     (SITE / "schedule.js").write_text(build_schedule_js(), encoding="utf-8")
 
@@ -257,7 +276,7 @@ def main() -> None:
 
     template = (HUB / "index.template.html").read_text(encoding="utf-8")
     replacements = {
-        "<!-- LIVE_CARDS -->": "\n".join(live_card(section) for section in live),
+        "<!-- LIVE_CARDS -->": "\n".join(live_card(section, course) for section in live),
         "<!-- SOON_CARDS -->": "\n".join(soon_card(section) for section in upcoming),
         "<!-- SHELL_HEADER -->": shell_header(live, "hub", depth=0),
         "<!-- SHELL_FOOTER -->": shell_footer([credit_html(section) for section in live]),

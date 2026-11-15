@@ -351,14 +351,14 @@ body:after {
     opacity: 1;
   }
 }
-body.hub-math .sidebar {
+body:is(.hub-math, .hub-circuits) .sidebar {
   top: var(--hub-bar);
   height: calc(100dvh - var(--hub-bar));
 }
-body.hub-math .mobile-dim.shown {
+body:is(.hub-math, .hub-circuits) .mobile-dim.shown {
   top: var(--hub-bar);
 }
-body.hub-math .hub-foot {
+body:is(.hub-math, .hub-circuits) .hub-foot {
   margin-left: 232px;
   padding: 24px 36px;
 }
@@ -368,17 +368,17 @@ body.hub-timetable {
   min-height: 100dvh;
 }
 @media (max-width: 1200px) {
-  body.hub-math .hub-foot {
+  body:is(.hub-math, .hub-circuits) .hub-foot {
     margin-left: 210px;
   }
 }
 @media (max-width: 950px) {
-  body.hub-math .hub-foot {
+  body:is(.hub-math, .hub-circuits) .hub-foot {
     margin-left: 185px;
   }
 }
 @media (max-width: 800px) {
-  body.hub-math .hub-foot {
+  body:is(.hub-math, .hub-circuits) .hub-foot {
     margin-left: 0;
   }
 }

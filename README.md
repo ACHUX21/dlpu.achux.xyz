@@ -23,6 +23,10 @@ courses/
     authoring/                Markdown lessons and the Python generator
     dist/                     prebuilt site, published at /math/
     README.md                 how to rebuild, and the upstream credit
+  circuits/                   circuit exam studio
+    authoring/                Markdown lessons and content generator
+    dist/                     prebuilt site, published at /circuits/
+    README.md                 upstream credit, rebuild and cache scope
   timetable/                  Fall 2026 timetable, published at /timetable/
     index.html
     timetable.css / .js       mission grid, mobile weekday view, briefings
@@ -56,6 +60,7 @@ The site always uses a dark color scheme, including when the browser prefers lig
 - **Command palette:** press **Ctrl+K / Cmd+K**, or use the header search button, from any page. Search pages, tools, sections, and all six math chapters. Use **↑ / ↓**, **Enter**, and **Esc**.
 - **Session intro:** a brief, non-blocking terminal status appears once per session. Skip it immediately; it is omitted for reduced-motion users.
 - **Math studio:** all 25 lessons, solving methods, course search (**/**), practice, saved mistakes, five interactive tools, PDF download, sources, and corrections remain available. Lesson review marks, notes, and attempts retain the original `discrete-studio-v1` localStorage format. Chapter cards show review progress. Progress measures reading, not mastery.
+- **Circuit studio:** 21 study topics, 36 original questions, solving methods, two visual labs, reviewed PDF, and the same source-derived learning briefs, inline quizzes, notes, progress and focus timer as math. Progress retains `circuitExamV1`, separate from math. Course cards and the command palette include both studios; timetable circuit briefings link to `/circuits/`. The circuit worker is scoped to `/circuits/` and only cleans up its own named caches. See `courses/circuits/README.md`.
 - **Focus timer:** a 25-minute timer in the studio sidebar supports start, pause, and reset, and keeps running while switching studio routes. On mobile, open the navigation menu to access it. It uses wall-clock elapsed time and resets on a full page reload; no sound or notification permission is needed.
 - **Timetable:** a five-day mission grid on desktop and a weekday selector on mobile. Choose weeks 11–19 with the selector, previous/next controls, or **← / →**. Course buttons open keyboard-accessible briefing dialogs with the original room, instructor, meeting time, and active weeks. Today is highlighted and a now-line appears during a class period, both using Shanghai time; these indicate the clock against the selected pattern. The timetable no longer loads Tailwind or any framework CDN.
 - **Secret channel:** the classic **↑ ↑ ↓ ↓ ← → ← → B A** sequence changes the broadcast hue. Repeat it to return.
@@ -68,6 +73,7 @@ Course files are copies, not git submodules.
 | --- | --- | --- |
 | `/` | Class hub | Achraf / ACHUX21, CST25 |
 | `/math/` | Discrete Math Studio | [sprindi/discrete-math-studio](https://github.com/sprindi/discrete-math-studio) |
+| `/circuits/` | Circuit & Electronic Tech | [sprindi/circuit-exam-studio](https://github.com/sprindi/circuit-exam-studio) |
 | `/timetable/` | Fall 2026 timetable | [THE12X/timetable2026](https://github.com/THE12X/timetable2026) |
 
 The math and timetable pages use relative asset links (`style.css`, `icon.ico`, `reviewed-course.pdf`), so they keep working under `/math/` and `/timetable/`. The math generator writes `content.js` into `courses/math/dist/` (the published folder). See `courses/math/README.md` to rebuild lessons, and `courses/timetable/README.md` for the timetable files.
@@ -85,13 +91,14 @@ Then open:
 
 - http://127.0.0.1:8080/
 - http://127.0.0.1:8080/math/
+- http://127.0.0.1:8080/circuits/
 - http://127.0.0.1:8080/timetable/
 
 ## Learning and accessibility
 
-Math lesson objectives come from the existing headings and definitions. Suggested preparation follows the published course order; difficulty is explicitly an estimate. Worked examples keep the reviewed source wording, with numbered solution steps and distinct Key idea, Common mistake, and Try it callouts. Inline quizzes use the existing question bank and save attempts in the original storage format. Definition tooltips work on hover and keyboard focus. Reading text is limited to about 70 characters per line.
+Studio lesson objectives come from the existing headings and definitions. Suggested preparation follows the published course order; difficulty is explicitly an estimate. Worked examples keep the reviewed source wording, with numbered solution steps and distinct Key idea, Common mistake, and Try it callouts. Inline quizzes use the existing question bank and save attempts in the original storage format. Definition tooltips work on hover and keyboard focus. Reading text is limited to about 70 characters per line.
 
-Completion marks, chapter rings, the course bar, and hub resume links share `discrete-studio-v1`. Completion measures reading, not mastery. Timetable meeting types come from the existing experiment, project, and extra-class titles; other meetings are labelled Class.
+Math completion marks, chapter rings, the course bar, and hub resume links share `discrete-studio-v1`; circuits use `circuitExamV1`. Completion measures reading, not mastery. Timetable meeting types come from the existing experiment, project, and extra-class titles; other meetings are labelled Class.
 
 ## Verification
 
@@ -106,12 +113,12 @@ python3 -m http.server 8765 --directory _site
 In another terminal:
 
 ```sh
-npm run audit -- --out=/workspace/codex/shots2
+timeout 120 npm run audit -- --out=/workspace/codex/shots2
 # Or capture only the desktop/mobile screenshots:
-npm run screenshots -- --out=/workspace/codex/shots2
+timeout 120 npm run screenshots -- --out=/workspace/codex/shots2
 ```
 
-Pass `--base=http://127.0.0.1:8080` for another preview port. The audit covers every math hash route, the hub, timetable weeks and mobile weekdays, labs, quiz feedback, search, and dialogs at 1440×900 and 390×844. It compares computed foreground/opacity with the painted background after temporarily hiding text, including SVG diagrams, gradients, disabled labels, and placeholders. All text must reach 4.5:1 regardless of size. It also checks page overflow and console errors. Navigation, screenshots, individual audits, and the whole command have time limits so a broken page cannot hang the run.
+Pass `--base=http://127.0.0.1:8080` for another preview port. The audit covers every math and circuit hash route, the hub, timetable weeks and mobile weekdays, labs, quiz feedback, search, and dialogs at 1440×900 and 390×844. It compares computed foreground and opacity with composited ancestor backgrounds and gradient stops. SVG labels use painted backgrounds with text temporarily hidden. Disabled labels and placeholders are included; only SVG pages need the extra screenshot. All text must reach 4.5:1 regardless of size. It also checks page overflow and console errors. Navigation, screenshots, individual audits, and the whole command have time limits so a broken page cannot hang the run.
 
 `contrast-report.json` records the results. Viewport PNGs and additional `-full.png` captures are saved in the chosen output directory, outside git. Inspect these visually as well as reading the report. Screenshots-only runs use a separate report and never overwrite contrast evidence. Progress, notes, inline quiz feedback/retry, and hub resume persistence have also been checked in Chrome.
 

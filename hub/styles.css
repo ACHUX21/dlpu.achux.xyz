@@ -719,3 +719,7 @@
   .course-outcomes li { font-size: 11px; padding: 4px 7px; }
   .hub-course-progress > div:first-child { font-size: 8px; gap: 8px; }
 }
+.card-schedule { grid-column:1 / -1; padding-top:24px; }
+.card-schedule h3 { margin-top:22px; }
+.card-schedule .summary { max-width:70ch; min-height:0; }
+.card-schedule .card-meta { margin-top:22px; }

@@ -207,7 +207,9 @@
     $("modalRoom").textContent = `Room ${room}`;
     $("modalTime").textContent = slot.raw;
     $("modalWeeks").textContent = entry.weeks;
-    $("math-link").hidden = entry.id !== "DM";
+    const studio=entry.id==='DM'?['../math/','Enter the math studio ↗']:entry.id==='CET'?['../circuits/','Enter the circuit studio ↗']:null;
+    $("math-link").hidden = !studio;
+    if(studio){$("math-link").href=studio[0];$("math-link").textContent=studio[1];}
     modal.style.borderTopColor = palette[entry.id];
     modal.showModal();
   }

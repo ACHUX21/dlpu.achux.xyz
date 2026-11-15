@@ -2,9 +2,9 @@
  * npm run audit -- --out=/workspace/codex/shots2
  * Uses system Chrome. Checks all rendered text (including SVG, placeholders and
  * pseudo content) at 4.5:1, regardless of font size. No accessibility exemptions.
- * Reads computed foreground/opacity and samples the actual painted background
- * with text temporarily hidden. This handles gradients, alpha, SVG shapes and
- * inherited backgrounds without treating transparent as black.
+ * Reads computed foreground/opacity and composites background colors, including
+ * gradient stops and transparent ancestors. SVG text uses its painted backdrop
+ * with labels temporarily hidden. Only SVG pages need an extra screenshot.
  */
 const { chromium } = require('playwright');
 const fs = require('node:fs/promises');
@@ -15,6 +15,8 @@ const base = option('base', 'http://127.0.0.1:8765');
 const out = option('out', '/workspace/codex/shots2');
 const shotsOnly = args.includes('--screenshots');
 const failures = [], errors = [], checks = [];
+// A crashed renderer must never leave the command running indefinitely.
+setTimeout(()=>{console.error('Site audit exceeded 110 seconds');process.exit(1)},110000).unref();
 
 // Runs in Chrome, including text below the fold but excluding clipped/offcanvas,
 // hidden and occluded-by-modal content. Range rectangles track wrapped text.
@@ -23,11 +25,26 @@ async function scan(page, label) {
   const text = await page.evaluate(() => {
     const items = [];
     const modal = document.querySelector('dialog[open]');
-    const root = modal || document.querySelector('.sidebar.open') || document.body;
+    const root = modal || document.querySelector('[role=dialog][aria-modal=true]') || document.querySelector('.sidebar.open') || document.body;
     const hidden = el => {
       if (!el.checkVisibility({checkOpacity: true, checkVisibilityCSS: true})) return true;
       return !!el.closest('script,style,noscript,option,template');
     };
+    const colorContext=document.createElement('canvas').getContext('2d');
+    const rgb=value=>{colorContext.clearRect(0,0,1,1);colorContext.fillStyle=value;colorContext.fillRect(0,0,1,1);return [...colorContext.getImageData(0,0,1,1).data]};
+    const over=(top,bottom)=>top.slice(0,3).map((v,i)=>v*top[3]/255+bottom[i]*(1-top[3]/255)).concat(255);
+    const backgrounds=new WeakMap();
+    function background(el){
+      if(!el)return [[255,255,255,255]];
+      if(backgrounds.has(el))return backgrounds.get(el);
+      const css=getComputedStyle(el),base=background(el.parentElement).map(bg=>over(rgb(css.backgroundColor),bg));
+      // All gradient stop colors are checked, which is conservative for text
+      // between stops. Transparency is composited with each ancestor surface.
+      const stops=css.backgroundImage.match(/rgba?\([^)]+\)|color\([^)]+\)|#[0-9a-f]{3,8}/gi)||[];
+      const colors=stops.length?stops.flatMap(stop=>base.map(bg=>over(rgb(stop),bg))):base;
+      const unique=[...new Map(colors.map(c=>[c.slice(0,3).map(Math.round).join(','),c])).values()];
+      backgrounds.set(el,unique);return unique;
+    }
     function record(el, value, rects, pseudo) {
       if (!value.trim() || hidden(el)) return;
       const css = getComputedStyle(el, pseudo);
@@ -43,7 +60,7 @@ async function scan(page, label) {
         }
         return true;
       });
-      if (visibleRects.length) items.push({text:value.trim().slice(0,110), selector:el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(typeof el.className==='string'?'.'+el.className.trim().replace(/\s+/g,'.'):''), color, opacity, rects:visibleRects});
+      if (visibleRects.length) items.push({text:value.trim().slice(0,110), selector:el.tagName.toLowerCase()+(el.id?'#'+el.id:'')+(typeof el.className==='string'?'.'+el.className.trim().replace(/\s+/g,'.'):''), color, opacity, backgrounds:background(el), svg:el instanceof SVGElement, rects:visibleRects});
     }
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     while (walk.nextNode()) {
@@ -63,14 +80,14 @@ async function scan(page, label) {
     }));
     return items;
   });
-  const hide = await page.addStyleTag({content: '* { -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; } .lesson-figure svg text, .lesson-figure svg tspan, .hero-art svg text, .graph-drawing text, .lab-svg text, svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }'});
+  const needsPainted=text.some(item=>item.svg);
+  const hide = needsPainted && await page.addStyleTag({content: '* { -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; } .lesson-figure svg text, .lesson-figure svg tspan, .hero-art svg text, .graph-drawing text, .lab-svg text, svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }'});
   let png;
-  try { png = await page.screenshot({fullPage:true, animations:'disabled'}); }
-  finally { await hide.evaluate(el=>el.remove()); }
+  if(needsPainted){try { png = await page.screenshot({fullPage:true, animations:'disabled',timeout:5000}); }
+  finally { await hide.evaluate(el=>el.remove()); }}
   const result = await page.evaluate(async ({text, image}) => {
-    const img = new Image(); img.src = image; await img.decode();
-    const canvas = document.createElement('canvas'); canvas.width=img.width;canvas.height=img.height;
-    const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);
+    const img = new Image();let ctx;
+    if(image){img.src=image;await img.decode();const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0)}
     const rgb = value => {
       const c=document.createElement('canvas').getContext('2d');c.fillStyle=value;c.fillRect(0,0,1,1);return [...c.getImageData(0,0,1,1).data];
     };
@@ -80,21 +97,19 @@ async function scan(page, label) {
       const fg=rgb(item.color),alpha=fg[3]/255*item.opacity;
       if(alpha===0)continue;
       let worst=Infinity,background;
-      for(const r of item.rects){
-        // Inset prevents sampling control borders and adjacent text lines.
+      const compare=bg=>{const painted=fg.slice(0,3).map((v,i)=>v*alpha+bg[i]*(1-alpha));const a=lum(painted),b=lum(bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);if(ratio<worst){worst=ratio;background=bg.slice(0,3).map(Math.round)}};
+      if(!item.svg){for(const bg of item.backgrounds)compare(bg)}
+      else for(const r of item.rects){
         const left=Math.max(0,r.x+Math.min(8,r.width/3)),right=Math.min(img.width-1,r.x+r.width-Math.min(8,r.width/3));
         for(const fy of [.4,.6])for(let x=left;x<=right;x+=Math.max(2,(right-left)/20)){
           const y=Math.min(img.height-1,Math.max(0,Math.floor(r.y+r.height*fy)));
-          const bg=[...ctx.getImageData(Math.floor(x),y,1,1).data];
-          const painted=fg.slice(0,3).map((v,i)=>v*alpha+bg[i]*(1-alpha));
-          const a=lum(painted),b=lum(bg),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
-          if(ratio<worst){worst=ratio;background=bg.slice(0,3)}
+          compare([...ctx.getImageData(Math.floor(x),y,1,1).data]);
         }
       }
-      if(worst<4.5)bad.push({...item,rects:undefined,ratio:+worst.toFixed(3),background});
+      if(worst<4.5)bad.push({...item,rects:undefined,backgrounds:undefined,ratio:+worst.toFixed(3),background});
     }
     return {count:text.length, failures:bad, overflow:document.documentElement.scrollWidth>innerWidth+1};
-  }, {text,image:'data:image/png;base64,'+png.toString('base64')});
+  }, {text,image:png?'data:image/png;base64,'+png.toString('base64'):null});
   checks.push({label,count:result.count,failures:result.failures.length,overflow:result.overflow});
   console.log(`${label}: ${result.count} text; ${result.failures.length} failures`);
   for (const f of result.failures) failures.push({page:label,...f});
@@ -109,13 +124,25 @@ async function scan(page, label) {
       const context=await browser.newContext({viewport,deviceScaleFactor:1,reducedMotion:'reduce'});
       await context.addInitScript(()=>sessionStorage.setItem('dlpu-broadcast-boot','1'));
       const page=await context.newPage();
+      page.setDefaultTimeout(6000);page.setDefaultNavigationTimeout(12000);
       page.on('pageerror',e=>errors.push(`${page.url()}: ${e.message}`));
       page.on('console',msg=>{if(msg.type()==='error')errors.push(`${page.url()}: ${msg.text()}`)});
-      const go=async(url)=>{await page.goto(base+url,{waitUntil:'networkidle'});await page.evaluate(()=>document.fonts.ready);};
-      const capture=async(label)=>scan(page,`${viewport.width} ${label}`);
-      const targets=[['hub','/'],['math','/math/'],['translate','/math/#method/translate'],['lesson','/math/#topic/1.1'],['timetable','/timetable/']];
-      for(const [name,url] of targets){await go(url);await page.screenshot({path:path.join(out,`${name}-${viewport.width}x${viewport.height}.png`),fullPage:true});if(!shotsOnly)await capture(url);}
+      const go=async(url)=>{await page.goto(base+url,{waitUntil:'networkidle'});await page.evaluate(async()=>{await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2000))]);window.scrollTo({top:0,left:0,behavior:'instant'});await new Promise(requestAnimationFrame)});};
+      const capture=async(label)=>{let timer;try{await Promise.race([scan(page,`${viewport.width} ${label}`),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Page audit exceeded 12 seconds: '+label)),12000)})])}finally{clearTimeout(timer)}};
+      const targets=[['hub','/'],['math','/math/'],['translate','/math/#method/translate'],['lesson','/math/#topic/1.1'],['timetable','/timetable/'],['circuits','/circuits/'],['circuits-lesson','/circuits/#topic/1.7']];
+      for(const [name,url] of targets){await go(url);await page.screenshot({path:path.join(out,`${name}-${viewport.width}x${viewport.height}.png`),timeout:5000});await page.screenshot({path:path.join(out,`${name}-${viewport.width}x${viewport.height}-full.png`),fullPage:true,timeout:5000});if(!shotsOnly)await capture(url);}
+      const size=viewport.width===1440?'desktop':'mobile';
+      await go('/circuits/');await page.screenshot({path:path.join(out,`circuits-${size}.png`),timeout:5000});
+      await go('/circuits/#topic/1.7');await page.screenshot({path:path.join(out,`circuits-lesson-${size}.png`),timeout:5000});
+      await go('/');await page.locator('.cards-live').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(out,`hub-courses-${size}.png`),timeout:5000});
       if(shotsOnly){await context.close();continue;}
+      await go('/circuits/');
+      const circuitRoutes=await page.evaluate(()=>['desk','topic','method','methods','practice','practice/mistakes','lab','exam',...COURSE_TOPICS.flatMap(t=>['topic/'+t.id,'practice/topic/'+t.id]),...METHODS.map(m=>'method/'+m.id)]);
+      for(const route of circuitRoutes){await page.evaluate(r=>{location.hash=r},route);await page.waitForTimeout(10);await capture('/circuits/#'+route);}
+      for(const mode of ['rc','ac']){await page.evaluate(()=>{location.hash='lab'});await page.waitForTimeout(10);await page.locator(`[data-lab="${mode}"]`).click();await capture('circuits lab '+mode);}
+      await page.evaluate(()=>{location.hash='topic/1.2'});await page.waitForTimeout(10);await page.locator('#quick-answer').fill('0');await page.locator('.quick-number button').click();await capture('circuits inline feedback');
+      await page.locator('#search').click();await capture('circuits search');await page.locator('.modal-close').click();
+      await page.locator('#about').evaluate(el=>el.click());await capture('circuits about');await page.locator('.modal-close').click();
       await go('/math/');
       const routes=await page.evaluate(()=>[...new Set(['desk','main','topic','methods','method','practice','lab','exam','sources',...TOPICS.flatMap(t=>['topic/'+t.id,'practice/'+t.id]),...CHAPTERS.map(c=>'practice/c'+c.id),...METHODS.map(m=>'method/'+m.id)])]);
       for(const route of routes){
@@ -151,7 +178,7 @@ async function scan(page, label) {
     }
   } catch(e) { errors.push(e.stack || String(e)); } finally {await browser.close()}
   const unique=[...new Map(failures.map(f=>[`${f.selector}|${f.text}|${f.color}|${f.background}|${f.ratio}`,f])).values()];
-  await fs.writeFile(path.join(out,'contrast-report.json'),JSON.stringify({checks,failures,errors},null,2));
+  await fs.writeFile(path.join(out,shotsOnly?'screenshots-report.json':'contrast-report.json'),JSON.stringify({checks,failures,errors},null,2));
   console.log(`${checks.length} states; ${checks.reduce((n,c)=>n+c.count,0)} text checks; ${failures.length} contrast failures (${unique.length} unique); ${errors.length} errors.`);
   console.log(JSON.stringify({failures:unique,errors},null,2));
   if(failures.length||errors.length)process.exitCode=1;

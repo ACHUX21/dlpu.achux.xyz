@@ -39,7 +39,8 @@
           ><select id="weekSelector" aria-label="Term week"></select
           ><button id="next-week" type="button" aria-label="Next week">
             →
-          </button>
+          </button
+          ><button id="this-week" class="this-week" type="button">This week</button>
         </div>
         <div class="week-summary">
           <span id="meeting-count"></span><span class="toolbar-divider">/</span
@@ -47,9 +48,13 @@
         </div>
       </div>
       <p class="schedule-note">
-        Term weeks 11–19 · Dates were not supplied with the source schedule.
-        Today’s highlight and clock follow Shanghai time.
+        <strong id="week-status" aria-live="polite">Week 11 · current week</strong>
+        · Week detected from your device date (week 1 = Mon 31 Aug 2026).
+        The clock follows Shanghai time.
       </p>
+      <aside class="type-legend" aria-label="Meeting type legend">
+        <strong>MEETING TYPE</strong><span><b class="meeting-type">Class</b> Scheduled course</span><span><b class="meeting-type lab">Lab</b> Experiment</span><span><b class="meeting-type project">Project</b> Project week</span><span><b class="meeting-type extra">Extra</b> Additional meeting</span>
+      </aside>
       <nav class="day-tabs" aria-label="Choose a weekday"></nav>
       <div
         class="table-wrapper"
@@ -83,7 +88,7 @@
       <h2 id="modalTitle"></h2>
       <dl>
         <div>
-          <dt>INSTRUCTOR</dt>
+          <dt>MEETING TYPE</dt><dd id="modalType"></dd></div><div><dt>INSTRUCTOR</dt>
           <dd id="modalInstructor"></dd>
         </div>
         <div>
@@ -102,6 +107,7 @@
       <a id="math-link" href="../math/" hidden>Enter the math studio ↗</a
       ><button class="briefing-done" type="button">Briefing complete →</button>
     </dialog>
+    <script src="../term-week.js"></script>
     <script>
       const MIN_WEEK = 11;
       const MAX_WEEKS = 19;
@@ -223,7 +229,7 @@
           T1: [{ id: "LA", weeks: "3-4", room: "101" }],
           T2: [{ id: "LA", weeks: "3-4", room: "101" }],
           T3: [
-            { id: "LA", weeks: "7-11", room: "101" },
+            { id: "LA", weeks: "7-10", room: "101" },
             {
               id: "CET",
               weeks: "14",
@@ -239,7 +245,7 @@
           ],
           T4: [
             { id: "CET", weeks: "2-4,6-8", room: "101" },
-            { id: "LA", weeks: "9-12", room: "101" },
+            { id: "LA", weeks: "9-10,12", room: "101" },
           ],
         },
         // Friday (4)

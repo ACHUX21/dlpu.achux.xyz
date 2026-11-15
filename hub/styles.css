@@ -700,3 +700,26 @@
 /* Decorative labels still use the same readable text palette. */
 .strip-divider, .badge span { color: #a0adbe; }
 .visual-index { bottom: 10px; right: 20px; font-size: 18px; color: #a0adbe; }
+
+/* Course previews share the mathematics studio's local reading progress. */
+.card-live { display: flex; flex-direction: column; }
+.course-outcomes { margin: 24px 0 0; }
+.outcomes-label { font: 9px var(--mono); letter-spacing: 1px; color: var(--bar); }
+.course-outcomes ul { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; padding: 0; margin: 12px 0 0; }
+.course-outcomes li { color: #c9dee5; background: #182b39; border: 1px solid #344e60; padding: 5px 9px; font-size: 12px; line-height: 1.6; }
+.hub-course-progress { padding: 18px 0 20px; margin-top: 5px; }
+.hub-course-progress > div:first-child { display: flex; justify-content: space-between; gap: 12px; font: 9px/1.7 var(--mono); color: #bfd0df; }
+.hub-course-progress > div:first-child > span:first-child { color: var(--cyan); }
+.hub-course-meter { height: 6px; background: #304256; margin: 10px 0; }
+.hub-course-meter > span { display: block; height: 100%; background: var(--cyan); }
+.hub-course-progress small { font-size: 12px; line-height: 1.7; color: #b9cad9; }
+.schedule-card-note { font-size: 13px; line-height: 1.9; color: #b9cad9; padding: 24px 0; }
+.card-live .card-meta { margin-top: auto; }
+@media (max-width:700px) {
+  .course-outcomes li { font-size: 11px; padding: 4px 7px; }
+  .hub-course-progress > div:first-child { font-size: 8px; gap: 8px; }
+}
+.card-schedule { grid-column:1 / -1; padding-top:24px; }
+.card-schedule h3 { margin-top:22px; }
+.card-schedule .summary { max-width:70ch; min-height:0; }
+.card-schedule .card-meta { margin-top:22px; }

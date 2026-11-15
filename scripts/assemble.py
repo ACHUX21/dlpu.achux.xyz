@@ -142,18 +142,36 @@ def accent_class(section: dict) -> str:
     return accent
 
 
-def live_card(section: dict) -> str:
+def live_card(section: dict, course: dict | None, episode: int) -> str:
     slug = section["slug"]
-    glyph = section.get("glyph") or "·"
-    episode = "01" if slug == "math" else "02"
-    stats = '<span>06 CHAPTERS</span><span>25 LESSONS</span><span>INTERACTIVE LABS</span>' if slug == "math" else '<span>WEEKS 11—19</span><span>05 DAYS</span><span>LIVE SCHEDULE</span>'
-    return f"""<a class="card card-live accent-{accent_class(section)}" href="{html.escape(slug, quote=True)}/">
-        <div class="card-top"><span class="kicker">EPISODE {episode} / {html.escape(section["kicker"])}</span><span class="card-status">● ON AIR</span></div>
-        <div class="card-visual" aria-hidden="true"><span class="card-symbol">{html.escape(glyph)}</span><span class="visual-label">{"論理と構造" if slug == "math" else "時間割"}</span><span class="visual-index">{episode}</span></div>
-        <h3>{html.escape(section["title"])}</h3>
+    title = html.escape(section["title"])
+    glyph = html.escape(section.get("glyph") or "·")
+    number = f"{episode:02d}"
+    if course:
+        stats = f'<span>{len(course["chapters"]):02d} CHAPTERS</span><span>{len(course["topics"])} LESSONS</span><span>{course["questionCount"]} QUESTIONS</span>'
+        learning = ('<div class="course-outcomes"><span class="outcomes-label">WHAT YOU WILL LEARN</span><ul>'
+                    + ''.join(f'<li>{html.escape(c["title"])}</li>' for c in course["chapters"])
+                    + '</ul></div><div class="hub-course-progress" data-course-progress><div><span>YOUR PROGRESS</span><span data-course-count>0 / '
+                    + str(len(course["topics"])) + ' lessons</span></div><div class="hub-course-meter" role="progressbar" aria-label="'
+                    + title + ' completion" aria-valuemin="0" aria-valuemax="' + str(len(course["topics"]))
+                    + '" aria-valuenow="0"><span></span></div><small data-course-resume>Start with '
+                    + html.escape(course["topics"][0]["title"]) + '</small></div>')
+        visual_label = "論理と構造" if slug == "math" else "回路と電子"
+        visual = f'<div class="card-visual" aria-hidden="true"><span class="card-symbol">{glyph}</span><span class="visual-label">{visual_label}</span><span class="visual-index">{number}</span></div>'
+    else:
+        stats = '<span>WEEKS 11—19</span><span>05 DAYS</span><span>CLASS / LAB / PROJECT</span>'
+        learning = ""
+        visual = ""
+    kind = "" if course else " card-schedule"
+    course_attr = f' data-course="{slug}"' if course else ""
+    return f"""<a class="card card-live accent-{accent_class(section)}{kind}" href="{html.escape(slug, quote=True)}/"{course_attr}>
+        <div class="card-top"><span class="kicker">EPISODE {number} / {html.escape(section["kicker"])}</span><span class="card-status">● ON AIR</span></div>
+        {visual}
+        <h3>{title}</h3>
         <p class="summary">{html.escape(section["summary"])}</p>
         <div class="card-stats">{stats}</div>
-        <p class="card-meta"><span class="path">/{html.escape(slug)}/</span><span class="go">Enter episode <span aria-hidden="true">↗</span></span></p>
+        {learning}
+        <p class="card-meta"><span class="path">/{html.escape(slug)}/</span><span class="go">{"Continue course" if course else "Open timetable"} <span aria-hidden="true">↗</span></span></p>
       </a>"""
 
 
@@ -165,6 +183,26 @@ def soon_card(section: dict) -> str:
         <h3>{html.escape(section["title"])}</h3>
         <p class="badge">NEXT EPISODE <span aria-hidden="true">↗</span></p>
       </article>"""
+
+
+def build_course_data(section: dict) -> dict:
+    """Extract counts and chapter titles from each studio's own published data."""
+    program = r'''const fs=require("fs"),vm=require("vm"),context={window:{}};
+const source=process.argv[1];
+for(const file of ["content.js","data.js"])vm.runInNewContext(fs.readFileSync(source+"/"+file,"utf8"),context);
+const data=context.window,topics=data.TOPICS||data.COURSE_TOPICS;
+const names=data.CHAPTERS?null:vm.runInNewContext(fs.readFileSync(source+"/app.js","utf8").match(/const chapterNames=(\[[^;]+\]);/)[1]);
+const chapters=data.CHAPTERS||[...new Set(topics.map(t=>t.chapter))].map(id=>({id,title:names[id]}));
+process.stdout.write(JSON.stringify({
+  topics:topics.map(({id,title,chapter})=>({id,title,chapter})),
+  methods:data.METHODS.map(({id,title,topic})=>({id,title,topic})),
+  chapters:chapters.map(({id,title})=>({id,title})),questionCount:data.QUESTIONS.length
+}));'''
+    result = subprocess.run(["node", "-e", program, str(ROOT / section["source"])], check=True, capture_output=True, text=True)
+    data = json.loads(result.stdout)
+    data["storageKey"] = "discrete-studio-v1" if section["slug"] == "math" else "circuitExamV1"
+    data["lastTopicKey"] = "lastLesson" if section["slug"] == "math" else "lastTopic"
+    return data
 
 
 def build_schedule_js() -> str:
@@ -246,7 +284,10 @@ def main() -> None:
         shutil.rmtree(SITE)
     SITE.mkdir()
 
-    for name in ("styles.css", "shell.css", "shell.js", "next.js", "favicon.svg"):
+    courses = {section["slug"]: build_course_data(section) for section in live if section["slug"] in {"math", "circuits"}}
+    (SITE / "course.js").write_text("window.DLPU_COURSES = " + json.dumps(courses, ensure_ascii=False) + ";\n", encoding="utf-8")
+
+    for name in ("learning.js", "styles.css", "shell.css", "shell.js", "next.js", "term-week.js", "favicon.svg"):
         shutil.copy2(HUB / name, SITE / name)
     (SITE / "schedule.js").write_text(build_schedule_js(), encoding="utf-8")
 
@@ -257,7 +298,8 @@ def main() -> None:
 
     template = (HUB / "index.template.html").read_text(encoding="utf-8")
     replacements = {
-        "<!-- LIVE_CARDS -->": "\n".join(live_card(section) for section in live),
+        "<!-- LIVE_CARDS -->": "\n".join(live_card(section, courses.get(section["slug"]), episode) for episode, section in enumerate(live, 1)),
+        "<!-- LIVE_COUNT -->": f"{len(live):02d}",
         "<!-- SOON_CARDS -->": "\n".join(soon_card(section) for section in upcoming),
         "<!-- SHELL_HEADER -->": shell_header(live, "hub", depth=0),
         "<!-- SHELL_FOOTER -->": shell_footer([credit_html(section) for section in live]),

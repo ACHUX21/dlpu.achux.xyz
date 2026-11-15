@@ -17,6 +17,21 @@
       }
     },
     {
+      "slug": "circuits",
+      "nav": "Circuits",
+      "kicker": "Course",
+      "title": "Circuit & Electronic Tech",
+      "summary": "Reviewed circuit theory, worked solving methods, practice questions, and visual labs for the circuit exam.",
+      "glyph": "⌁",
+      "accent": "cet",
+      "source": "courses/circuits/dist",
+      "credit": {
+        "prefix": "Adapted from",
+        "href": "https://github.com/sprindi/circuit-exam-studio",
+        "label": "sprindi/circuit-exam-studio"
+      }
+    },
+    {
       "slug": "timetable",
       "nav": "Timetable",
       "kicker": "Schedule",
@@ -33,11 +48,35 @@
     }
   ],
   "upcoming": [
-    { "code": "DS", "title": "Data Structure", "glyph": "{}", "accent": "ds" },
-    { "code": "LA", "title": "Linear Algebra", "glyph": "λ", "accent": "la" },
-    { "code": "CET", "title": "Circuit & Electronic Tech", "glyph": "⚡", "accent": "cet" },
-    { "code": "CC", "title": "Comprehensive Chinese III", "glyph": "文", "accent": "cc" },
-    { "code": "EC", "title": "English Composition", "glyph": "Ab", "accent": "ec" },
-    { "code": "OC", "title": "Overview of China", "glyph": "中", "accent": "oc" }
+    {
+      "code": "DS",
+      "title": "Data Structure",
+      "glyph": "{}",
+      "accent": "ds"
+    },
+    {
+      "code": "LA",
+      "title": "Linear Algebra",
+      "glyph": "λ",
+      "accent": "la"
+    },
+    {
+      "code": "CC",
+      "title": "Comprehensive Chinese III",
+      "glyph": "文",
+      "accent": "cc"
+    },
+    {
+      "code": "EC",
+      "title": "English Composition",
+      "glyph": "Ab",
+      "accent": "ec"
+    },
+    {
+      "code": "OC",
+      "title": "Overview of China",
+      "glyph": "中",
+      "accent": "oc"
+    }
   ]
 }

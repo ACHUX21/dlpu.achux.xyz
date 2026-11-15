@@ -28,15 +28,33 @@
       time: `${get("hour")}:${get("minute")}:${get("second")}`,
     };
   }
-  let selectedDay = Math.max(0, shanghai().day);
+  // The current week comes from the device's local calendar date (shared helper).
+  const term = window.DLPU_TERM
+    ? window.DLPU_TERM.current()
+    : { week: currentWeek, raw: currentWeek, status: "in", weekday: shanghai().day };
+  const deviceDay = () => (window.DLPU_TERM ? window.DLPU_TERM.current().weekday : shanghai().day);
+  const thisWeek = Math.min(MAX_WEEKS, Math.max(MIN_WEEK, term.week));
+  currentWeek = thisWeek;
+  let selectedDay = deviceDay() <= 4 ? deviceDay() : 0;
+  // A manual pick lasts for this browser session only; a new visit opens on the current week.
   try {
-    const stored = Number(localStorage.getItem("dlpu-schedule-week"));
+    localStorage.removeItem("dlpu-schedule-week");
+    const stored = Number(sessionStorage.getItem("dlpu-schedule-week"));
     if (stored >= MIN_WEEK && stored <= MAX_WEEKS) currentWeek = stored;
   } catch {}
+  function weekStatus(week) {
+    if (term.status === "before" && term.raw >= 1)
+      return week === thisWeek ? `Now week ${term.raw} · timetable starts week ${MIN_WEEK}` : `Week ${week} · now week ${term.raw}`;
+    if (term.status === "before")
+      return week === thisWeek ? `Term not in session · showing week ${week}` : `Week ${week} · term not in session yet`;
+    if (term.status === "after")
+      return week === thisWeek ? `Term ended · showing week ${week}` : `Week ${week} · term ended`;
+    return week === thisWeek ? `Week ${week} · current week` : `Week ${week} · current week is ${thisWeek}`;
+  }
   for (let i = MIN_WEEK; i <= MAX_WEEKS; i++) {
     const opt = document.createElement("option");
     opt.value = i;
-    opt.textContent = `Week ${i}`;
+    opt.textContent = i === thisWeek && term.status === "in" ? `Week ${i} · now` : `Week ${i}`;
     $("weekSelector").append(opt);
   }
   days.forEach((day, i) => {
@@ -53,16 +71,33 @@
   $("weekSelector").onchange = (e) => renderWeek(Number(e.target.value));
   $("prev-week").onclick = () => changeWeek(-1);
   $("next-week").onclick = () => changeWeek(1);
+  $("this-week").onclick = () => {
+    try { sessionStorage.removeItem("dlpu-schedule-week"); } catch {}
+    selectedDay = deviceDay() <= 4 ? deviceDay() : 0;
+    renderWeek(thisWeek, false);
+  };
   const minutes = (s) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));
   function changeWeek(delta) {
     if (currentWeek + delta >= MIN_WEEK && currentWeek + delta <= MAX_WEEKS)
       renderWeek(currentWeek + delta);
   }
-  function renderWeek(week) {
+  // Only experiment, project and extra titles have a more specific source type.
+  function meetingType(entry) {
+    const title=entry.title || '';
+    if(/project/i.test(title))return ['Project','project'];
+    if(/\bexp\b|experiment/i.test(title))return ['Lab','lab'];
+    if(/extra/i.test(title))return ['Extra','extra'];
+    return ['Class',''];
+  }
+  function renderWeek(week, remember = true) {
     currentWeek = week;
     try {
-      localStorage.setItem("dlpu-schedule-week", String(week));
+      if (remember && week !== thisWeek) sessionStorage.setItem("dlpu-schedule-week", String(week));
+      else sessionStorage.removeItem("dlpu-schedule-week");
     } catch {}
+    $("week-status").textContent = weekStatus(week);
+    $("this-week").disabled = week === thisWeek;
+    $("this-week").setAttribute("aria-pressed", String(week === thisWeek));
     $("weekSelector").value = week;
     $("prev-week").disabled = week === MIN_WEEK;
     $("next-week").disabled = week === MAX_WEEKS;
@@ -116,8 +151,12 @@
           b.style.setProperty("--course-color", palette[entry.id]);
           b.setAttribute(
             "aria-label",
-            `${title}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
+            `${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
           );
+          const [type,typeClass]=meetingType(entry);
+          const typeBadge=document.createElement('span');
+          typeBadge.className='meeting-type '+typeClass;
+          typeBadge.textContent=type;
           const code = document.createElement("span");
           code.className = "course-code";
           code.textContent = `${entry.id} / 0${si + 1}`;
@@ -129,7 +168,8 @@
           const foot = document.createElement("span");
           foot.className = "course-foot";
           foot.innerHTML = `<span>ROOM ${room}</span><span aria-hidden="true">↗</span>`;
-          b.append(code, name, teacher, foot);
+          const cardHead=document.createElement('span');cardHead.className='course-card-head';cardHead.append(code,typeBadge);
+          b.append(cardHead, name, teacher, foot);
           b.onclick = () => openModal(entry, info, room, slot, title);
           cell.append(b);
         } else {
@@ -148,7 +188,7 @@
     updateClock();
   }
   function paintDay() {
-    const today = shanghai().day;
+    const today = term.status === "in" && currentWeek === thisWeek ? deviceDay() : -1;
     document
       .querySelectorAll(".tt-head[data-day],.tt-cell[data-day]")
       .forEach((el) => {
@@ -171,7 +211,7 @@
     const now = shanghai();
     $("shanghai-clock").textContent = `${now.time} / SHANGHAI`;
     document.querySelectorAll(".now-line").forEach((el) => el.remove());
-    if (now.day < 0) return;
+    if (now.day < 0 || term.status !== "in" || currentWeek !== thisWeek) return;
     timeSlots.forEach((slot, si) => {
       const start = minutes(slot.start),
         end = minutes(slot.end);
@@ -189,11 +229,14 @@
   }
   function openModal(entry, info, room, slot, title) {
     $("modalTitle").textContent = title;
+    $("modalType").textContent = meetingType(entry)[0];
     $("modalInstructor").textContent = info.instructor;
     $("modalRoom").textContent = `Room ${room}`;
     $("modalTime").textContent = slot.raw;
     $("modalWeeks").textContent = entry.weeks;
-    $("math-link").hidden = entry.id !== "DM";
+    const studio=entry.id==='DM'?['../math/','Enter the math studio ↗']:entry.id==='CET'?['../circuits/','Enter the circuit studio ↗']:null;
+    $("math-link").hidden = !studio;
+    if(studio){$("math-link").href=studio[0];$("math-link").textContent=studio[1];}
     modal.style.borderTopColor = palette[entry.id];
     modal.showModal();
   }
@@ -237,7 +280,7 @@
       changeWeek(1);
     }
   });
-  renderWeek(currentWeek);
+  renderWeek(currentWeek, false);
   setInterval(updateClock, 1000);
   setInterval(paintDay, 60000);
 })();

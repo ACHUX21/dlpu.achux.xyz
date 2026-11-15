@@ -18,22 +18,11 @@ SKIP_NAMES = {"README.md", ".DS_Store"}
 SKIP_PARTS = {".git", "__pycache__"}
 SLUG = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 
-BOOT = """<script>
-(function () {
-  var stored = null;
-  try { stored = localStorage.getItem("dlpu-hub-theme") || localStorage.getItem("theme"); } catch (e) {}
-  var dark = stored === "dark" || (stored !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-  var root = document.documentElement;
-  root.dataset.theme = dark ? "dark" : "light";
-  root.classList.toggle("dark", dark);
-  root.style.colorScheme = dark ? "dark" : "light";
-})();
-</script>
-"""
+BOOT = """<script>document.documentElement.dataset.theme="dark";document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark";</script>\n"""
 
 FONT = """<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{css}">
 """
 
@@ -79,29 +68,23 @@ def shell_header(live: list[dict], current: str, depth: int) -> str:
         current_attr = ' aria-current="page" class="is-current"' if active else ""
         return f'<a href="{href}"{current_attr}>{html.escape(label)}</a>'
 
-    links = [link("Hub", "../" if depth else "./", current == "hub")]
-    for section in live:
+    links = [link("01 / Hub", "../" if depth else "./", current == "hub")]
+    for index, section in enumerate(live, start=2):
         links.append(
             link(
-                section.get("nav") or section["title"],
+                f"{index:02d} / " + (section.get("nav") or section["title"]),
                 f"{prefix}{section['slug']}/",
                 current == section["slug"],
             )
         )
     home = "../" if depth else "./"
     return f"""<header class="hub-bar">
-  <a class="hub-brand" href="{home}">
-    <span class="hub-mark" aria-hidden="true">DL</span>
-    <span class="hub-brand-text">
-      <span class="hub-name">Class hub</span>
-      <span class="hub-sub">DLPU · CST25</span>
-    </span>
+  <a class="hub-brand" href="{home}" aria-label="DLPU class hub home">
+    <span class="hub-mark" aria-hidden="true">D<span>↗</span></span>
+    <span class="hub-brand-text"><span class="hub-name">DLPU<span class="brand-slash"> / </span>CST25</span><span class="hub-sub">THE NIGHT BROADCAST · 夜間放送</span></span>
   </a>
   <nav class="hub-nav" aria-label="Sections">{"".join(links)}</nav>
-  <button class="hub-theme" type="button" aria-label="Switch color theme">
-    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.5A8.5 8.5 0 1 1 9.5 3 7 7 0 0 0 21 14.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-  </button>
+  <button class="hub-command" type="button" aria-label="Open command palette"><span>⌕</span><span class="command-label">Jump to</span><kbd>⌘ K</kbd></button>
 </header>
 """
 
@@ -112,7 +95,7 @@ def shell_footer(credits: list[str]) -> str:
   <div class="hub-foot-inner">
     <p>Achraf (ACHUX21) · CST25 · Dalian Polytechnic University</p>
     <p class="hub-credit">{credit}</p>
-    <p class="hub-domain">dlpu.achux.xyz</p>
+    <p class="hub-domain">END OF TRANSMISSION <span aria-hidden="true">◈</span> dlpu.achux.xyz</p>
   </div>
 </footer>
 """
@@ -139,17 +122,15 @@ def inject_shell(page: str, live: list[dict], section: dict) -> str:
     if 'class="hub-bar"' in page:
         return page
     slug = section["slug"]
-    follow = section.get("theme") == "studio"
     css = FONT.format(css="../shell.css")
-    head_bits = css if follow else BOOT + css
+    head_bits = BOOT + css
     if "</head>" not in page or "</body>" not in page:
         fail(f"{slug} index.html is missing head or body")
     page = page.replace("</head>", head_bits + "</head>", 1)
     page = add_body_class(page, ["hub-section", f"hub-{slug}"])
     header = shell_header(live, slug, depth=1)
     page = re.sub(r"<body\b[^>]*>", lambda match: match.group(0) + "\n" + header, page, count=1)
-    mode = ' data-mode="follow"' if follow else ""
-    script = f'<script src="../shell.js"{mode}></script>\n'
+    script = '<script src="../shell.js"></script>\n'
     page = page.replace("</body>", "\n" + shell_footer([credit_html(section)]) + script + "</body>", 1)
     return page
 
@@ -164,12 +145,15 @@ def accent_class(section: dict) -> str:
 def live_card(section: dict) -> str:
     slug = section["slug"]
     glyph = section.get("glyph") or "·"
+    episode = "01" if slug == "math" else "02"
+    stats = '<span>06 CHAPTERS</span><span>25 LESSONS</span><span>INTERACTIVE LABS</span>' if slug == "math" else '<span>WEEKS 11—19</span><span>05 DAYS</span><span>LIVE SCHEDULE</span>'
     return f"""<a class="card card-live accent-{accent_class(section)}" href="{html.escape(slug, quote=True)}/">
-        <span class="glyph" aria-hidden="true">{html.escape(glyph)}</span>
-        <p class="kicker">{html.escape(section["kicker"])}</p>
+        <div class="card-top"><span class="kicker">EPISODE {episode} / {html.escape(section["kicker"])}</span><span class="card-status">● ON AIR</span></div>
+        <div class="card-visual" aria-hidden="true"><span class="card-symbol">{html.escape(glyph)}</span><span class="visual-label">{"論理と構造" if slug == "math" else "時間割"}</span><span class="visual-index">{episode}</span></div>
         <h3>{html.escape(section["title"])}</h3>
         <p class="summary">{html.escape(section["summary"])}</p>
-        <p class="card-meta"><span class="path">/{html.escape(slug)}/</span><span class="go">Open</span></p>
+        <div class="card-stats">{stats}</div>
+        <p class="card-meta"><span class="path">/{html.escape(slug)}/</span><span class="go">Enter episode <span aria-hidden="true">↗</span></span></p>
       </a>"""
 
 
@@ -179,7 +163,7 @@ def soon_card(section: dict) -> str:
         <span class="glyph" aria-hidden="true">{html.escape(glyph)}</span>
         <p class="kicker">{html.escape(section["code"])}</p>
         <h3>{html.escape(section["title"])}</h3>
-        <p class="badge"><span class="dot" aria-hidden="true"></span>Coming soon</p>
+        <p class="badge">NEXT EPISODE <span aria-hidden="true">↗</span></p>
       </article>"""
 
 

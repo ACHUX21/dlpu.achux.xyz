@@ -4,7 +4,7 @@ Study site for the CST25 discrete mathematics course. The hub publishes `dist/` 
 
 Adapted from [sprindi/discrete-math-studio](https://github.com/sprindi/discrete-math-studio). The files were copied into this repository (this is not a git submodule). Original third-party lesson material keeps its own ownership; this copy does not add a license for that material.
 
-The published page is wrapped in the class-hub header and footer. The footer credits `sprindi/discrete-math-studio` and links back to the hub. The studio’s own sidebar is offset below that header. The in-page studio footer repeats the credit.
+The published page is wrapped in the class-hub header and footer. The footer credits `sprindi/discrete-math-studio` and links back to the hub. The studio’s own sidebar is offset below that header. The dark-only broadcast design retains the original lesson, method, tool, and practice behavior. `theme.js` sets the initial dark scheme; `theme.css` supplies the studio design. `focus.js` adds a 25-minute timer that survives studio route navigation. Existing review marks, notes, and practice attempts retain their original localStorage format. The in-page studio footer repeats the credit.
 
 ## Layout
 

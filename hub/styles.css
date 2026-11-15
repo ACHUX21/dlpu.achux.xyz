@@ -696,3 +696,7 @@
     font-size: 18px;
   }
 }
+
+/* Decorative labels still use the same readable text palette. */
+.strip-divider, .badge span { color: #a0adbe; }
+.visual-index { bottom: 10px; right: 20px; font-size: 18px; color: #a0adbe; }

@@ -424,7 +424,11 @@ h1 {
 .method-card h3 {
   font: 600 25px var(--serif);
 }
-.formula-big,
+.formula-big {
+  background: #152634;
+  color: #a5e5df;
+  border: 1px solid #2c4354;
+}
 .formula-card .formula {
   color: var(--cyan);
 }
@@ -755,3 +759,22 @@ textarea::placeholder {
 .lesson-figure svg [stroke="#ccd4c3"] {
   stroke: #486278;
 }
+
+/* Keep disabled labels readable; state is communicated by border and cursor. */
+button:disabled, .button:disabled {
+  opacity: 1;
+  color: #a0adbe;
+  background: #18212c;
+  border-color: #344155;
+}
+
+.button.primary:disabled, .button.primary:disabled:hover {
+  background: #18212c;
+  border-color: #344155;
+  color: #a0adbe;
+  transform: none;
+}
+
+/* Slide SVGs include class-based fills as well as presentation attributes. */
+.lesson-figure svg .node { fill: #172c3d; stroke: #6babbc; }
+.lesson-figure svg circle[fill-opacity] { fill-opacity: .16; }

@@ -1,0 +1,9 @@
+{
+  "name": "dlpu-site-checks",
+  "private": true,
+  "scripts": {
+    "audit": "node scripts/audit-site.cjs",
+    "screenshots": "node scripts/audit-site.cjs --screenshots"
+  },
+  "devDependencies": { "playwright": "1.65.1" }
+}

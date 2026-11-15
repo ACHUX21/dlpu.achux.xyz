@@ -465,3 +465,11 @@ body.hub-timetable {
     display: none !important;
   }
 }
+
+/* Keep disabled labels readable; state is communicated by border and cursor. */
+button:disabled, .button:disabled {
+  opacity: 1;
+  color: #a0adbe;
+  background: #18212c;
+  border-color: #344155;
+}

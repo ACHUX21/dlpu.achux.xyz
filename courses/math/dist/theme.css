@@ -903,3 +903,13 @@ button:disabled, .button:disabled {
 /* Slide SVGs include class-based fills as well as presentation attributes. */
 .lesson-figure svg .node { fill: #172c3d; stroke: #6babbc; }
 .lesson-figure svg circle[fill-opacity] { fill-opacity: .16; }
+
+
+.repair-card { border:1px solid #34485a; background:#121f2d; padding:12px; margin:16px 0; max-width:100%; }
+.repair-card h2 { font:500 18px var(--serif); margin:0 0 8px; }
+.repair-list { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.repair-list a { font:10px/1.3 var(--mono); color:var(--cyan); border:1px solid #34485a; padding:4px 6px; text-decoration:none; max-width:100%; overflow-wrap:anywhere; }
+.repair-empty { font:10px var(--mono); color:var(--muted); }
+.formula-filter { display:block; margin:12px 0; font:9px var(--mono); color:var(--muted); max-width:100%; }
+.formula-filter input { display:block; width:min(100%,28rem); margin-top:4px; font:12px var(--mono); padding:6px 8px; background:#121f2d; color:var(--ink); border:1px solid #34485a; }
+.formula-card.is-hidden, #formula-empty[hidden] { display:none !important; }

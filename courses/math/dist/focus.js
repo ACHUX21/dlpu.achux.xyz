@@ -76,10 +76,10 @@
 
   function statusText() {
     if (notice) return notice;
-    const cycle = mode === "focus" ? ` ${Math.min(focusDone + 1, settings.sessions)} of ${settings.sessions} before a long break.` : "";
+    const cycle = mode === "focus" ? ` ${Math.min(focusDone + 1, settings.sessions)}/${settings.sessions}.` : "";
     if (running) return `${label(mode)} is running.${cycle}`;
     if (remaining < settings[mode] * 60) return `${label(mode)} is paused.${cycle}`;
-    return `${label(mode)}. Press Start when you are ready.${cycle}`;
+    return mode === "focus" ? `Focus.${cycle}` : `${label(mode)}.`;
   }
 
   function snapshotDraft() {
@@ -108,7 +108,7 @@
     target.innerHTML =
       '<section class="focus-console" aria-label="Focus timer">' +
       '<div class="focus-head"><label id="focus-label">FOCUS / 集中</label>' +
-      `<button type="button" class="focus-edit" id="focus-edit" aria-expanded="${editing}" aria-controls="focus-settings">Edit</button></div>` +
+      `<button type="button" class="focus-edit" id="focus-edit" aria-expanded="${editing}" aria-controls="focus-settings" aria-label="Edit timer settings" title="Edit timer settings"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h4.2L18.6 9.6a1.6 1.6 0 0 0-2.2-2.2L6 17.8 4 20z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M13.8 6.2l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button></div>` +
       '<div class="focus-modes" role="group" aria-label="Timer mode">' +
       MODES.map((key) => {
         const pressed = key === mode ? "true" : "false";
@@ -163,7 +163,7 @@
   }
 
   function field(name, id, value, hint) {
-    return `<label><span>${name}</span><input id="${id}" name="${id}" inputmode="numeric" autocomplete="off" aria-describedby="${id}-hint" value="${escapeHtml(value)}"></label><span id="${id}-hint" class="focus-hint">${hint}</span>`;
+    return `<label><span>${name}<em>${hint}</em></span><input id="${id}" name="${id}" inputmode="numeric" autocomplete="off" aria-label="${escapeHtml(name + ", " + hint)}" value="${escapeHtml(value)}"></label>`;
   }
 
   function selectMode(next) {

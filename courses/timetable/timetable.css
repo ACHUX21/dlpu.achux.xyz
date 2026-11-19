@@ -674,11 +674,20 @@
 .meeting-type.lab { color: #f0d095; background: #3a3023; border-color: #82653f; }
 .meeting-type.project { color: #ddc9f4; background: #30283f; border-color: #756184; }
 .meeting-type.extra { color: #f5c2ce; background: #382733; border-color: #8b6075; }
+.meeting-type.final { color: #ffd7a8; background: #3a2a1c; border-color: #a8783d; }
+.tt-finals .tt-time { background: #24180f; color: #f0d095; }
+.exam-card { border-style: dashed; min-height: 0; }
+.exam-card strong { font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
+.exam-meta { font: 8px/1.45 var(--mono); color: #f0d095; overflow-wrap: anywhere; }
+#courseModal [hidden] { display: none; }
 .course-card-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
 @media (max-width:700px) {
   .type-legend { gap: 10px 12px; padding: 13px; font-size: 10px; }
   .type-legend > strong { width: 100%; }
   .meeting-type { font-size: 9px; }
+  .exam-card strong { font-size: 16px; }
+  .exam-meta { font-size: 9px; }
+  .tt-finals .free-period { min-height: 0; }
 }
 
 /* Current-week detection */

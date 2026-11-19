@@ -237,7 +237,22 @@ schedule.forEach((day, di) => {
     });
   });
 });
-process.stdout.write(JSON.stringify({previewWeek: currentWeek, days, meetings}));
+const exams = (typeof finalExams === "undefined" ? [] : finalExams).map((exam) => ({
+  id: exam.id,
+  courseId: exam.courseId,
+  name: exam.nameEn,
+  nameZh: exam.nameZh,
+  book: exam.book,
+  noticeBook: exam.noticeBook,
+  target: exam.target,
+  date: exam.date,
+  start: exam.start,
+  end: exam.end,
+  room: exam.room,
+  href: exam.href || "",
+  source: typeof EXAM_SOURCE === "string" ? EXAM_SOURCE : ""
+}));
+process.stdout.write(JSON.stringify({previewWeek: currentWeek, days, meetings, exams}));
 """
     result = subprocess.run(["node", "-e", program], check=False, capture_output=True, text=True)
     if result.returncode != 0:
@@ -245,6 +260,8 @@ process.stdout.write(JSON.stringify({previewWeek: currentWeek, days, meetings}))
     payload = json.loads(result.stdout)
     if payload.get("previewWeek") != 11 or len(payload.get("meetings") or []) < 10:
         fail("Timetable schedule did not parse into the expected week")
+    if len(payload.get("exams") or []) != 2:
+        fail("Timetable schedule did not include the two week-13 final exams")
     return "window.DLPU_WEEK = " + json.dumps(payload, ensure_ascii=False) + ";\n"
 
 

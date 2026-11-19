@@ -50,10 +50,11 @@
       <p class="schedule-note">
         <strong id="week-status" aria-live="polite">Week 11 · current week</strong>
         · Week detected from your device date (week 1 = Mon 31 Aug 2026).
-        The clock follows Shanghai time.
+        The clock follows Shanghai time. Week 13 final exams use the printed
+        times from the user-provided examination notice.
       </p>
       <aside class="type-legend" aria-label="Meeting type legend">
-        <strong>MEETING TYPE</strong><span><b class="meeting-type">Class</b> Scheduled course</span><span><b class="meeting-type lab">Lab</b> Experiment</span><span><b class="meeting-type project">Project</b> Project week</span><span><b class="meeting-type extra">Extra</b> Additional meeting</span>
+        <strong>MEETING TYPE</strong><span><b class="meeting-type">Class</b> Scheduled course</span><span><b class="meeting-type lab">Lab</b> Experiment</span><span><b class="meeting-type project">Project</b> Project week</span><span><b class="meeting-type extra">Extra</b> Additional meeting</span><span><b class="meeting-type final">Final</b> Week 13 exam</span>
       </aside>
       <nav class="day-tabs" aria-label="Choose a weekday"></nav>
       <div
@@ -102,6 +103,22 @@
         <div>
           <dt>ACTIVE WEEKS</dt>
           <dd id="modalWeeks"></dd>
+        </div>
+        <div id="modal-book-row" hidden>
+          <dt>BOOK</dt>
+          <dd id="modalBook"></dd>
+        </div>
+        <div id="modal-target-row" hidden>
+          <dt>TEST TARGET</dt>
+          <dd id="modalTarget"></dd>
+        </div>
+        <div id="modal-date-row" hidden>
+          <dt>DATE</dt>
+          <dd id="modalDate"></dd>
+        </div>
+        <div id="modal-source-row" hidden>
+          <dt>SOURCE</dt>
+          <dd id="modalSource"></dd>
         </div>
       </dl>
       <a id="math-link" href="../math/" hidden>Enter the math studio ↗</a
@@ -263,6 +280,42 @@
           T4: [],
         },
       ];
+
+      // Official week-13 finals. Dates are Shanghai calendar dates from the
+      // user-provided notice. Weekday and term week are derived, not typed in.
+      const finalExams = [
+        {
+          id: "cet-final",
+          courseId: "CET",
+          nameZh: "电路与电子技术",
+          nameEn: "Circuit and Electronic Technology",
+          book: "Open book",
+          noticeBook: "open book",
+          target: "2025CST & Restudying",
+          date: "2026-11-25",
+          start: "10:00",
+          end: "11:30",
+          room: "201",
+          href: "../circuits/",
+          linkLabel: "Enter the circuit studio ↗",
+        },
+        {
+          id: "la-final",
+          courseId: "LA",
+          nameZh: "线性代数",
+          nameEn: "Linear Algebra",
+          book: "Closed book",
+          noticeBook: "close book",
+          target: "2025CST & Restudying",
+          date: "2026-11-26",
+          start: "13:30",
+          end: "15:00",
+          room: "201",
+          href: "",
+          linkLabel: "",
+        },
+      ];
+      const EXAM_SOURCE = "User-provided week-13 final examination notice";
 
       function isWeekActive(rule, week) {
         return rule.split(",").some((part) => {

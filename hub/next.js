@@ -46,6 +46,7 @@
         (Number(start.slice(0, 2)) * 60 + Number(start.slice(3))) * 60000;
       const classes = data.meetings
         .filter((m) => m.day === weekday && active(m.weeks, dayWeek))
+        .filter((m) => !(term && term.replacedByExam(m.start, m.end, ymd, data.exams)))
         .map((m) => ({
           ...m,
           kind: "class",

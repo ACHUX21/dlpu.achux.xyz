@@ -101,12 +101,34 @@
       : Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(2026, 7, 31)) / 86400000 / 7) + 1;
     return { y, m, d, weekday, week, label: `${WEEKDAYS[weekday] || ""} ${d} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1]} ${y}` };
   }
-  function examsFor(week, dayIndex) {
+  function examsOn(week, dayIndex) {
     if (typeof finalExams === "undefined") return [];
     return finalExams.filter((exam) => {
       const when = examWhen(exam);
       return when.week === 13 && when.week === week && when.weekday === dayIndex;
     });
+  }
+  // The period row that contains the largest share of the printed exam.
+  // Times stay exact on the card; this only chooses the grid row.
+  function primarySlot(exam) {
+    let best = -1;
+    let bestOverlap = 0;
+    timeSlots.forEach((slot, index) => {
+      const overlap =
+        Math.min(minutes(exam.end), minutes(slot.end)) -
+        Math.max(minutes(exam.start), minutes(slot.start));
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        best = index;
+      }
+    });
+    return best;
+  }
+  function fitInSlot(exam, slot) {
+    const span = minutes(slot.end) - minutes(slot.start);
+    const from = Math.max(0, Math.min(100, ((minutes(exam.start) - minutes(slot.start)) / span) * 100));
+    const to = Math.max(from, Math.min(100, ((minutes(exam.end) - minutes(slot.start)) / span) * 100));
+    return { from, to };
   }
   function renderWeek(week, remember = true) {
     currentWeek = week;
@@ -142,60 +164,7 @@
     body.replaceChildren();
     let meetings = 0;
     let finals = 0;
-    const weekExamLists = days.map((_, di) => examsFor(week, di));
-    if (weekExamLists.some((list) => list.length)) {
-      const row = document.createElement("div");
-      row.className = "tt-row tt-finals";
-      row.setAttribute("role", "row");
-      const time = document.createElement("div");
-      time.className = "tt-time";
-      time.setAttribute("role", "rowheader");
-      time.innerHTML = `<small>FINAL EXAM</small><span>EXACT</span><small>TIME</small>`;
-      row.append(time);
-      weekExamLists.forEach((list, di) => {
-        const cell = document.createElement("div");
-        cell.className = "tt-cell";
-        cell.setAttribute("role", "cell");
-        cell.dataset.day = di;
-        if (!list.length) {
-          const free = document.createElement("div");
-          free.className = "free-period";
-          free.textContent = "NO FINAL";
-          cell.append(free);
-        }
-        list.forEach((exam) => {
-          finals++;
-          const when = examWhen(exam);
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "course-card exam-card";
-          b.style.setProperty("--course-color", palette[exam.courseId] || "#e7c27b");
-          b.setAttribute("aria-label", `Final exam, ${exam.nameEn}, ${when.label}, ${exam.start} to ${exam.end}, room ${exam.room}, ${exam.book}.`);
-          const head = document.createElement("span");
-          head.className = "course-card-head";
-          const code = document.createElement("span");
-          code.className = "course-code";
-          code.textContent = "FINAL";
-          const badge = document.createElement("span");
-          badge.className = "meeting-type final";
-          badge.textContent = "Final";
-          head.append(code, badge);
-          const name = document.createElement("strong");
-          name.textContent = exam.nameEn;
-          const zh = document.createElement("span");
-          zh.className = "instructor";
-          zh.textContent = exam.nameZh;
-          const meta = document.createElement("span");
-          meta.className = "exam-meta";
-          meta.textContent = `${when.label} · ${exam.start}–${exam.end} · ${exam.book} · Rm ${exam.room}`;
-          b.append(head, name, zh, meta);
-          b.onclick = () => openExam(exam);
-          cell.append(b);
-        });
-        row.append(cell);
-      });
-      body.append(row);
-    }
+    const examsByDay = days.map((_, di) => examsOn(week, di));
     timeSlots.forEach((slot, si) => {
       const row = document.createElement("div");
       row.className = "tt-row";
@@ -214,6 +183,50 @@
         const entry = schedule[di][slot.id].find((c) =>
           isWeekActive(c.weeks, week),
         );
+        const slotExams = examsByDay[di].filter((exam) => primarySlot(exam) === si);
+        if (slotExams.length && entry) cell.classList.add("tt-shared");
+        slotExams.forEach((exam) => {
+          finals++;
+          const when = examWhen(exam);
+          const fit = fitInSlot(exam, slot);
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "course-card exam-card";
+          b.style.setProperty("--course-color", palette[exam.courseId] || "#e7c27b");
+          b.setAttribute("aria-label", `Final exam, ${exam.nameEn}, ${when.label}, ${exam.start} to ${exam.end}, room ${exam.room}, ${exam.book}. Placed in the ${slot.raw} row.`);
+          const head = document.createElement("span");
+          head.className = "course-card-head";
+          const code = document.createElement("span");
+          code.className = "course-code";
+          code.textContent = "FINAL";
+          const badge = document.createElement("span");
+          badge.className = "meeting-type final";
+          badge.textContent = "Final";
+          head.append(code, badge);
+          const name = document.createElement("strong");
+          name.textContent = exam.nameEn;
+          const zh = document.createElement("span");
+          zh.className = "instructor";
+          zh.textContent = exam.nameZh;
+          const meta = document.createElement("span");
+          meta.className = "exam-meta";
+          meta.textContent = `${exam.start}–${exam.end} · ${exam.book} · Rm ${exam.room}`;
+          const fitBar = document.createElement("span");
+          fitBar.className = "exam-fit";
+          fitBar.setAttribute("aria-hidden", "true");
+          const mark = document.createElement("i");
+          mark.style.marginLeft = `${fit.from}%`;
+          mark.style.width = `${Math.max(8, fit.to - fit.from)}%`;
+          fitBar.append(mark);
+          const fitNote = document.createElement("span");
+          fitNote.className = "exam-fit-note";
+          const startsEarly = minutes(exam.start) < minutes(slot.start);
+          const endsLate = minutes(exam.end) > minutes(slot.end);
+          fitNote.textContent = `${when.label} · ${startsEarly ? "from" : "at"} ${exam.start}, ${endsLate ? "to" : "until"} ${exam.end}`;
+          b.append(head, name, zh, meta, fitBar, fitNote);
+          b.onclick = () => openExam(exam);
+          cell.append(b);
+        });
         if (entry) {
           meetings++;
           const info = courses[entry.id],
@@ -221,11 +234,13 @@
             title = entry.title || info.name;
           const b = document.createElement("button");
           b.type = "button";
-          b.className = "course-card";
+          b.className = slotExams.length ? "course-card class-still" : "course-card";
           b.style.setProperty("--course-color", palette[entry.id]);
           b.setAttribute(
             "aria-label",
-            `${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
+            slotExams.length
+              ? `Still scheduled, overlaps the final. ${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}.`
+              : `${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
           );
           const [type,typeClass]=meetingType(entry);
           const typeBadge=document.createElement('span');
@@ -233,7 +248,7 @@
           typeBadge.textContent=type;
           const code = document.createElement("span");
           code.className = "course-code";
-          code.textContent = `${entry.id} / 0${si + 1}`;
+          code.textContent = slotExams.length ? "STILL SCHEDULED" : `${entry.id} / 0${si + 1}`;
           const name = document.createElement("strong");
           name.textContent = title;
           const teacher = document.createElement("span");
@@ -241,12 +256,14 @@
           teacher.textContent = info.instructor;
           const foot = document.createElement("span");
           foot.className = "course-foot";
-          foot.innerHTML = `<span>ROOM ${room}</span><span aria-hidden="true">↗</span>`;
+          foot.innerHTML = slotExams.length
+            ? `<span>${slot.raw} · ROOM ${room}</span><span aria-hidden="true">↗</span>`
+            : `<span>ROOM ${room}</span><span aria-hidden="true">↗</span>`;
           const cardHead=document.createElement('span');cardHead.className='course-card-head';cardHead.append(code,typeBadge);
           b.append(cardHead, name, teacher, foot);
           b.onclick = () => openModal(entry, info, room, slot, title);
           cell.append(b);
-        } else {
+        } else if (!slotExams.length) {
           const free = document.createElement("div");
           free.className = "free-period";
           free.textContent = "NO TRANSMISSION";

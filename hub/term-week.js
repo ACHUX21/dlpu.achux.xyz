@@ -28,5 +28,24 @@
   function dateOf(week, weekday) {
     return ANCHOR + ((week - 1) * 7 + weekday) * DAY;
   }
-  global.DLPU_TERM = { FIRST, LAST, weekForYMD, weekdayForYMD, localYMD, current, dateOf };
+  function ymdOf(week, weekday) {
+    const t = new Date(dateOf(week, weekday));
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${t.getUTCFullYear()}-${pad(t.getUTCMonth() + 1)}-${pad(t.getUTCDate())}`;
+  }
+  function clockMinutes(value) {
+    const text = String(value);
+    return Number(text.slice(0, 2)) * 60 + Number(text.slice(3, 5));
+  }
+  // An exam replaces one class occurrence when it falls on that calendar
+  // date and the two clock ranges overlap. Other weeks keep the class.
+  function replacedByExam(start, end, ymd, exams) {
+    const a0 = clockMinutes(start), a1 = clockMinutes(end);
+    return (exams || []).some((exam) => {
+      if (!exam || exam.date !== ymd) return false;
+      const b0 = clockMinutes(exam.start), b1 = clockMinutes(exam.end);
+      return a0 < b1 && b0 < a1;
+    });
+  }
+  global.DLPU_TERM = { FIRST, LAST, weekForYMD, weekdayForYMD, localYMD, current, dateOf, ymdOf, replacedByExam };
 })(window);

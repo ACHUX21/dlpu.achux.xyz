@@ -184,7 +184,12 @@
           isWeekActive(c.weeks, week),
         );
         const slotExams = examsByDay[di].filter((exam) => primarySlot(exam) === si);
-        if (slotExams.length && entry) cell.classList.add("tt-shared");
+        const ymd = window.DLPU_TERM ? window.DLPU_TERM.ymdOf(week, di) : "";
+        const replaced = !!(
+          entry &&
+          window.DLPU_TERM &&
+          window.DLPU_TERM.replacedByExam(slot.start, slot.end, ymd, typeof finalExams === "undefined" ? [] : finalExams)
+        );
         slotExams.forEach((exam) => {
           finals++;
           const when = examWhen(exam);
@@ -227,20 +232,18 @@
           b.onclick = () => openExam(exam);
           cell.append(b);
         });
-        if (entry) {
+        if (entry && !replaced) {
           meetings++;
           const info = courses[entry.id],
             room = entry.room || info.room || "TBA",
             title = entry.title || info.name;
           const b = document.createElement("button");
           b.type = "button";
-          b.className = slotExams.length ? "course-card class-still" : "course-card";
+          b.className = "course-card";
           b.style.setProperty("--course-color", palette[entry.id]);
           b.setAttribute(
             "aria-label",
-            slotExams.length
-              ? `Still scheduled, overlaps the final. ${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}.`
-              : `${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
+            `${title}, ${meetingType(entry)[0]}, ${day}, ${slot.raw}, room ${room}. Open course briefing.`,
           );
           const [type,typeClass]=meetingType(entry);
           const typeBadge=document.createElement('span');
@@ -248,7 +251,7 @@
           typeBadge.textContent=type;
           const code = document.createElement("span");
           code.className = "course-code";
-          code.textContent = slotExams.length ? "STILL SCHEDULED" : `${entry.id} / 0${si + 1}`;
+          code.textContent = `${entry.id} / 0${si + 1}`;
           const name = document.createElement("strong");
           name.textContent = title;
           const teacher = document.createElement("span");
@@ -256,9 +259,7 @@
           teacher.textContent = info.instructor;
           const foot = document.createElement("span");
           foot.className = "course-foot";
-          foot.innerHTML = slotExams.length
-            ? `<span>${slot.raw} · ROOM ${room}</span><span aria-hidden="true">↗</span>`
-            : `<span>ROOM ${room}</span><span aria-hidden="true">↗</span>`;
+          foot.innerHTML = `<span>ROOM ${room}</span><span aria-hidden="true">↗</span>`;
           const cardHead=document.createElement('span');cardHead.className='course-card-head';cardHead.append(code,typeBadge);
           b.append(cardHead, name, teacher, foot);
           b.onclick = () => openModal(entry, info, room, slot, title);
